@@ -20,7 +20,20 @@ private let windowRecoveryLog = Logger(subsystem: aeroSpaceAppId, category: "win
 
 @MainActor
 func saveWindowRecoveryState(to url: URL = defaultWindowRecoveryFileUrl) {
-    let state = WindowRecoveryState(version: WindowRecoveryState.currentVersion, world: snapshotFrozenWorld())
+    // Collect floating window frames before the quit float-all-windows loop destroys them.
+    // Frames are in top-left origin coordinates (same convention as `Rect`)
+    var floatingFrames: [UInt32: FrozenFrame] = [:]
+    for workspace in Workspace.all {
+        for window in workspace.floatingWindows {
+            if let macWindow = window as? MacWindow, let frame = macWindow.realFrameForRecovery() {
+                floatingFrames[macWindow.windowId] = FrozenFrame(frame)
+            }
+        }
+    }
+    let state = WindowRecoveryState(
+        version: WindowRecoveryState.currentVersion,
+        world: snapshotFrozenWorld(floatingFrames: floatingFrames),
+    )
     do {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         let encoder = JSONEncoder()

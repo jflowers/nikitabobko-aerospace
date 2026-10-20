@@ -32,13 +32,34 @@ struct FrozenContainer: Sendable, Codable, Equatable {
     }
 }
 
+struct FrozenFrame: Sendable, Codable, Equatable {
+    let topLeftX: CGFloat
+    let topLeftY: CGFloat
+    let width: CGFloat
+    let height: CGFloat
+
+    init(topLeftX: CGFloat, topLeftY: CGFloat, width: CGFloat, height: CGFloat) {
+        self.topLeftX = topLeftX
+        self.topLeftY = topLeftY
+        self.width = width
+        self.height = height
+    }
+
+    init(_ rect: Rect) {
+        self.init(topLeftX: rect.topLeftX, topLeftY: rect.topLeftY, width: rect.width, height: rect.height)
+    }
+}
+
 struct FrozenWindow: Sendable, Codable, Equatable {
     let id: UInt32
     let weight: CGFloat
+    // Top-left origin coordinates (same convention as `Rect`); only floating windows have frames
+    let frame: FrozenFrame?
 
-    @MainActor init(_ window: Window) {
+    @MainActor init(_ window: Window, frame: FrozenFrame? = nil) {
         id = window.windowId
         weight = getWeightOrNil(window) ?? 1
+        self.frame = frame
     }
 }
 

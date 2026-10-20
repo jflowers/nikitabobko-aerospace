@@ -26,21 +26,21 @@ struct FrozenWorkspace: Sendable, Codable, Equatable {
     let floatingWindows: [FrozenWindow]
     let macosUnconventionalWindows: [FrozenWindow]
 
-    @MainActor init(_ workspace: Workspace) {
+    @MainActor init(_ workspace: Workspace, floatingFrames: [UInt32: FrozenFrame] = [:]) {
         name = workspace.name
         monitor = FrozenMonitor(workspace.workspaceMonitor)
         rootTilingNode = FrozenContainer(workspace.rootTilingContainer)
-        floatingWindows = workspace.floatingWindows.map(FrozenWindow.init)
+        floatingWindows = workspace.floatingWindows.map { FrozenWindow($0, frame: floatingFrames[$0.windowId]) }
         macosUnconventionalWindows =
             workspace.macOsNativeHiddenAppsWindowsContainer.children.map { FrozenWindow($0 as! Window) } +
             workspace.macOsNativeFullscreenWindowsContainer.children.map { FrozenWindow($0 as! Window) }
     }
 }
 
-@MainActor func snapshotFrozenWorld() -> FrozenWorld {
+@MainActor func snapshotFrozenWorld(floatingFrames: [UInt32: FrozenFrame] = [:]) -> FrozenWorld {
     let allWs = Workspace.all
     return FrozenWorld(
-        workspaces: allWs.map { FrozenWorkspace($0) },
+        workspaces: allWs.map { FrozenWorkspace($0, floatingFrames: floatingFrames) },
         monitors: monitorInfos.map(FrozenMonitor.init),
         windowIds: allWs.flatMap { collectAllWindowIdsRecursive($0) }.toSet(),
     )
@@ -67,7 +67,12 @@ struct FrozenWorkspace: Sendable, Codable, Equatable {
             .singleOrNil()?
             .setActiveWorkspace(workspace)
         for frozenWindow in frozenWorkspace.floatingWindows {
-            MacWindow.get(byId: frozenWindow.id)?.bindAsFloatingWindow(to: workspace)
+            if let window = MacWindow.get(byId: frozenWindow.id) {
+                window.bindAsFloatingWindow(to: workspace)
+                if let frame = frozenWindow.frame {
+                    window.setAxFrame(CGPoint(x: frame.topLeftX, y: frame.topLeftY), CGSize(width: frame.width, height: frame.height))
+                }
+            }
         }
         for frozenWindow in frozenWorkspace.macosUnconventionalWindows { // Will get fixed by normalizations
             MacWindow.get(byId: frozenWindow.id)?.bindAsFloatingWindow(to: workspace)

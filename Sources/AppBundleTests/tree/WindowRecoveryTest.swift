@@ -74,4 +74,33 @@ final class WindowRecoveryTest: XCTestCase {
         assertEquals(decoded.world, world)
         assertEquals(decoded.version, WindowRecoveryState.currentVersion)
     }
+
+    func testCodableRoundTripOfFrozenWindowWithFrame() {
+        let ws1 = Workspace.get(byName: "wr1")
+        let testWindow = TestWindow.new(id: 7, parent: ws1.floatingWindowsContainer)
+        let frame = FrozenFrame(topLeftX: 5.5, topLeftY: 10.25, width: 100, height: 200)
+        let frozenWindow = FrozenWindow(testWindow, frame: frame)
+        let data = try! JSONEncoder().encode(frozenWindow)
+        let decoded = try! JSONDecoder().decode(FrozenWindow.self, from: data)
+        assertEquals(decoded, frozenWindow)
+        assertEquals(decoded.frame, frame)
+    }
+
+    func testFrozenWindowDecodesLegacyJsonWithoutFrame() {
+        let json = #"{"id": 42, "weight": 1.0}"#
+        let decoded = try! JSONDecoder().decode(FrozenWindow.self, from: json.data(using: .utf8)!)
+        assertEquals(decoded.id, 42)
+        assertEquals(decoded.weight, 1)
+        assertNil(decoded.frame)
+    }
+
+    func testSnapshotFrozenWorldAttachesFloatingFrames() {
+        let ws1 = Workspace.get(byName: "wr1")
+        let floating = TestWindow.new(id: 9, parent: ws1.floatingWindowsContainer)
+        let frame = FrozenFrame(topLeftX: 1, topLeftY: 2, width: 3, height: 4)
+        let world = snapshotFrozenWorld(floatingFrames: [floating.windowId: frame])
+        let frozenWorkspace = world.workspaces.first { $0.name == "wr1" }!
+        let frozenWindow = frozenWorkspace.floatingWindows.first { $0.id == floating.windowId }!
+        assertEquals(frozenWindow.frame, frame)
+    }
 }
