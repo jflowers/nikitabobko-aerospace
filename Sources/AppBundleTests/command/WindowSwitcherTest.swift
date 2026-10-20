@@ -40,9 +40,11 @@ final class WindowSwitcherTest: XCTestCase {
         await parseCommand("focus dfs-next --gui").cmdOrDie.run(.defaultEnv, .emptyStdin)
         assertEquals(focus.windowOrNil?.windowId, 1)
         assertEquals(controller.session?.selectedIndex, 2)
+        assertNil(TestApp.shared.focusedWindow)
 
         controller.commit()
         assertEquals(focus.windowOrNil?.windowId, 3)
+        assertEquals(TestApp.shared.focusedWindow?.windowId, 3)
         assertNil(controller.session)
     }
 
@@ -60,6 +62,7 @@ final class WindowSwitcherTest: XCTestCase {
 
         controller.cancel()
         assertEquals(focus.windowOrNil?.windowId, 1)
+        assertNil(TestApp.shared.focusedWindow)
         assertNil(controller.session)
     }
 
@@ -83,6 +86,7 @@ final class WindowSwitcherTest: XCTestCase {
         assertEquals(controller.session?.selectedIndex, 1)
         controller.commit()
         assertEquals(focus.windowOrNil?.windowId, 2)
+        assertEquals(TestApp.shared.focusedWindow?.windowId, 2)
     }
 
     func testGuiDropsClosedWindows() async {
@@ -106,6 +110,7 @@ final class WindowSwitcherTest: XCTestCase {
 
         controller.commit()
         assertEquals(focus.windowOrNil?.windowId, 3)
+        assertEquals(TestApp.shared.focusedWindow?.windowId, 3)
     }
 
     func testGuiOverFloatingWindows() async {
@@ -133,6 +138,7 @@ final class WindowSwitcherTest: XCTestCase {
 
         controller.commit()
         assertEquals(focus.windowOrNil?.windowId, 2)
+        assertEquals(TestApp.shared.focusedWindow?.windowId, 2)
         assertEquals(workspace.floatingWindows.count, 4)
         assertEquals(workspace.rootTilingContainer.allLeafWindowsRecursive.count, 0)
     }

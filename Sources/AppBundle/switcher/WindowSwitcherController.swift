@@ -114,6 +114,7 @@ final class WindowSwitcherController {
         let windowToFocus = session.windows.getOrNil(atIndex: session.selectedIndex)
         endSession()
         _ = windowToFocus?.focusWindow()
+        windowToFocus?.nativeFocus() // syncFocusToMacOs
     }
 
     func cancel() {
