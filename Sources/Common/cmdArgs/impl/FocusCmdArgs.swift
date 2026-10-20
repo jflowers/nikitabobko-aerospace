@@ -14,6 +14,7 @@ public struct FocusCmdArgs: CmdArgs {
             "--fail-if-fullscreen": trueBoolFlag(\.failIfFullscreen),
             "--fail-if-macos-native-fullscreen": trueBoolFlag(\.failIfMacosNativeFullscreen),
             "--wrap-around": trueBoolFlag(\.wrapAroundAlias),
+            "--gui": trueBoolFlag(\.gui),
         ],
         posArgs: [ArgParser(\.cardinalOrDfsDirection, upcastArgParserFun(parseCardinalOrDfsDirection))],
         conflictingOptions: [
@@ -26,6 +27,7 @@ public struct FocusCmdArgs: CmdArgs {
     public var rawBoundariesAction: WhenBoundariesCrossed? = nil
     public var failIfFullscreen: Bool = false
     public var failIfMacosNativeFullscreen: Bool = false
+    public var gui: Bool = false
     fileprivate var wrapAroundAlias: Bool = false
     public var dfsIndex: UInt32? = nil
     public var cardinalOrDfsDirection: CardinalOrDfsDirection? = nil
@@ -122,6 +124,9 @@ func parseFocusCmdArgs(_ args: StrArrSlice) -> ParsedCmd<FocusCmdArgs> {
         }
         .filter("(dfs-next|dfs-prev) only supports --boundaries workspace") {
             $0.target.isDfsRelative.implies($0.boundaries == .workspace)
+        }
+        .filter("--gui is compatible only with (dfs-next|dfs-prev)") {
+            !$0.gui || $0.target.isDfsRelative
         }
 }
 

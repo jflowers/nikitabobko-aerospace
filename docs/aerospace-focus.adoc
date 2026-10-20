@@ -14,7 +14,7 @@ aerospace focus [-h|--help] [--ignore-floating] [--wrap-around]
                 [--fail-if-fullscreen] [--fail-if-macos-native-fullscreen]
                 (left|down|up|right)
 aerospace focus [-h|--help] [--ignore-floating] [--wrap-around]
-                [--boundaries <boundary>] [--boundaries-action <action>]
+                [--boundaries <boundary>] [--boundaries-action <action>] [--gui]
                 (dfs-next|dfs-prev)
 aerospace focus [-h|--help] --window-id <window-id>
 aerospace focus [-h|--help] --dfs-index <dfs-index>
@@ -73,6 +73,14 @@ Only compatible with `(left|down|up|right)`.
 --fail-if-macos-native-fullscreen::
 Exit with non-zero code if the current target window is in macOS native fullscreen.
 Only compatible with `(left|down|up|right)`.
+
+--gui::
+Show a native App Switcher-like overlay to cycle through the windows of the current workspace. +
+Only compatible with `(dfs-next|dfs-prev)`. +
+The first invocation opens the overlay and moves the selection by one, every subsequent invocation moves the selection further. +
+The focus is changed only when the modifier that is held during the first invocation (excluding `Shift`) is released, or when `Enter` is pressed. +
+`Escape` cancels the cycling and keeps the current focus. +
+If no modifier is held during the first invocation (e.g. when the command is triggered from CLI) or the event tap can't be created, the command falls back to the regular immediate behavior.
 
 // =========================================================== Arguments
 include::./util/conditional-arguments-header.adoc[]

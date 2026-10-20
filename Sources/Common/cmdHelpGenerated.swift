@@ -53,7 +53,7 @@ let focus_help_generated = """
                  [--fail-if-fullscreen] [--fail-if-macos-native-fullscreen]
                  (left|down|up|right)
        OR: focus [-h|--help] [--ignore-floating] [--wrap-around]
-                 [--boundaries <boundary>] [--boundaries-action <action>]
+                 [--boundaries <boundary>] [--boundaries-action <action>] [--gui]
                  (dfs-next|dfs-prev)
        OR: focus [-h|--help] --window-id <window-id>
        OR: focus [-h|--help] --dfs-index <dfs-index>

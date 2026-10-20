@@ -49,6 +49,15 @@ struct FocusCommand: Command {
                 guard let currentIndex = windows.firstIndex(where: { $0 == target.windowOrNil }) else {
                     return .fail(io.err("Can't find the focused window in the tiling tree of workspace '\(target.workspace.name)'"))
                 }
+                if args.gui, let code = WindowSwitcherController.shared.cycle(
+                    dfsRelative: nextPrev,
+                    windows: windows,
+                    currentIndex: currentIndex,
+                    boundariesAction: args.boundariesAction,
+                    workspace: target.workspace,
+                ) {
+                    return code
+                }
                 var targetIndex = switch nextPrev {
                     case .dfsNext: currentIndex + 1
                     case .dfsPrev: currentIndex - 1
