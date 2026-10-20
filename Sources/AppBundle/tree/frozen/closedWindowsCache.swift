@@ -9,7 +9,7 @@ import Common
 /// so that once the screen is unlocked, AeroSpace could restore windows to where they were
 @MainActor private var closedWindowsCache = FrozenWorld(workspaces: [], monitors: [], windowIds: [])
 
-struct FrozenMonitor: Sendable {
+struct FrozenMonitor: Sendable, Codable, Equatable {
     let topLeftCorner: CGPoint
     let visibleWorkspace: String
 
@@ -19,7 +19,7 @@ struct FrozenMonitor: Sendable {
     }
 }
 
-struct FrozenWorkspace: Sendable {
+struct FrozenWorkspace: Sendable, Codable, Equatable {
     let name: String
     let monitor: FrozenMonitor // todo drop this property, once monitor to workspace assignment migrates to TreeNode
     let rootTilingNode: FrozenContainer
@@ -37,17 +37,21 @@ struct FrozenWorkspace: Sendable {
     }
 }
 
-@MainActor func cacheClosedWindowIfNeeded() {
+@MainActor func snapshotFrozenWorld() -> FrozenWorld {
     let allWs = Workspace.all
-    let allWindowIds = allWs.flatMap { collectAllWindowIdsRecursive($0) }.toSet()
+    return FrozenWorld(
+        workspaces: allWs.map { FrozenWorkspace($0) },
+        monitors: monitorInfos.map(FrozenMonitor.init),
+        windowIds: allWs.flatMap { collectAllWindowIdsRecursive($0) }.toSet(),
+    )
+}
+
+@MainActor func cacheClosedWindowIfNeeded() {
+    let allWindowIds = Workspace.all.flatMap { collectAllWindowIdsRecursive($0) }.toSet()
     if allWindowIds.isSubset(of: closedWindowsCache.windowIds) {
         return // already cached
     }
-    closedWindowsCache = FrozenWorld(
-        workspaces: allWs.map { FrozenWorkspace($0) },
-        monitors: monitorInfos.map(FrozenMonitor.init),
-        windowIds: allWindowIds,
-    )
+    closedWindowsCache = snapshotFrozenWorld()
 }
 
 @MainActor func restoreClosedWindowsCacheIfNeeded(newlyDetectedWindow: Window) async throws -> Bool {
@@ -123,4 +127,8 @@ private func restoreTreeRecursive(frozenContainer: FrozenContainer, parent: NonL
 // and with mouse manipulations
 @MainActor func resetClosedWindowsCache() {
     closedWindowsCache = FrozenWorld(workspaces: [], monitors: [], windowIds: [])
+}
+
+@MainActor func seedClosedWindowsCache(_ world: FrozenWorld) {
+    closedWindowsCache = world
 }

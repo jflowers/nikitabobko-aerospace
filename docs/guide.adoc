@@ -280,6 +280,27 @@ after-startup-command = [
 ]
 ----
 
+[#window-recovery]
+=== window-recovery
+
+You can use `window-recovery` to restore windows to the workspaces they belonged to before AeroSpace was stopped.
+
+On quit, AeroSpace saves the assignment of windows to workspaces (including the tree layout and floating windows)
+to `~/Library/Application Support/AeroSpace/window-recovery.json`.
+On the next startup, windows that still exist are moved back to the workspaces they belonged to.
+
+* The fallback value (if you omit the key): `window-recovery = false`
+* The state is saved on clean quit (e.g. quitting via the menu bar, `killall AeroSpace`, `brew services stop`).
+If AeroSpace crashes or is SIGKILLed, the state from the previous clean quit is used
+* Windows that were closed between quit and startup are simply skipped
+* If some workspaces are missing on startup (e.g. you renamed them in the config), they are recreated on the fly,
+and removed automatically once they become empty
+
+[source,toml]
+----
+window-recovery = true
+----
+
 [#exec-env-vars]
 === exec-* Environment Variables
 

@@ -13,9 +13,15 @@ import Foundation
             interceptTermination(SIGINT)
             interceptTermination(SIGKILL)
         }
+        // To make window-recovery work when the app is stopped via `killall` or `brew services stop`
+        interceptTermination(SIGTERM)
 
         await bootstrapConfig_nonCancellable()
         _ = await reloadConfig_nonCancellable()
+
+        if config.windowRecovery, let world = loadWindowRecoveryState() {
+            seedClosedWindowsCache(world)
+        }
 
         startUnixSocketServer()
         GlobalObserver.initObserver()
