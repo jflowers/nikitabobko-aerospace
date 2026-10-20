@@ -100,7 +100,9 @@ extension Shell where T == any Command {
         switch self {
             case .cmd(let command):
                 let exitCode = Int32ExitCode(rawValue: await command.run(env, io).rawValue)
-                if command.shouldResetClosedWindowsCache { resetClosedWindowsCache() }
+                // Don't reset closedWindowsCache during startup: on-window-detected commands (e.g. move-node-to-workspace
+                // from config) must not wipe the cache while window-recovery is still restoring windows from it
+                if command.shouldResetClosedWindowsCache, !isStartup { resetClosedWindowsCache() }
                 await refreshModel_nonCancellable()
                 return exitCode
             case .and(let commands): return await runShellAnd(commands, env, io)

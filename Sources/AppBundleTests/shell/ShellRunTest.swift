@@ -127,4 +127,16 @@ final class ShellRunTest: XCTestCase {
         assertEquals(result.stdout, ["done"])
         assertEquals(focus.workspace.name, "b")
     }
+
+    func testCacheResettingCommandDoesNotResetClosedWindowsCacheDuringStartup() async {
+        seedClosedWindowsCache(FrozenWorld(workspaces: [], monitors: [], windowIds: [42].toSet()))
+
+        await $refreshSessionEvent.withValue(.startup) {
+            await parseCommand("layout floating").cmdOrDie.run(.defaultEnv, .emptyStdin)
+        }
+        assertEquals(getClosedWindowsCache().windowIds, [42].toSet())
+
+        await parseCommand("layout floating").cmdOrDie.run(.defaultEnv, .emptyStdin)
+        assertEquals(getClosedWindowsCache().windowIds, [].toSet())
+    }
 }

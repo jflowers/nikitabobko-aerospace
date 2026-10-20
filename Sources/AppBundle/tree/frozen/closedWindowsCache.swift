@@ -132,3 +132,7 @@ private func restoreTreeRecursive(frozenContainer: FrozenContainer, parent: NonL
 @MainActor func seedClosedWindowsCache(_ world: FrozenWorld) {
     closedWindowsCache = world
 }
+
+@MainActor func getClosedWindowsCache() -> FrozenWorld {
+    closedWindowsCache
+}
