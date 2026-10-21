@@ -92,6 +92,19 @@ final class WindowRecoveryTest: XCTestCase {
         assertEquals(decoded.id, 42)
         assertEquals(decoded.weight, 1)
         assertNil(decoded.frame)
+        assertEquals(decoded.isSticky, false) // isSticky was added after frame; legacy files don't have it
+    }
+
+    func testCodableRoundTripOfFrozenWindowWithSticky() {
+        let ws1 = Workspace.get(byName: "wr1")
+        let testWindow = TestWindow.new(id: 8, parent: ws1.floatingWindowsContainer)
+        testWindow.isSticky = true
+        let frozenWindow = FrozenWindow(testWindow)
+        assertEquals(frozenWindow.isSticky, true)
+        let data = try! JSONEncoder().encode(frozenWindow)
+        let decoded = try! JSONDecoder().decode(FrozenWindow.self, from: data)
+        assertEquals(decoded, frozenWindow)
+        assertEquals(decoded.isSticky, true)
     }
 
     func testSnapshotFrozenWorldAttachesFloatingFrames() {

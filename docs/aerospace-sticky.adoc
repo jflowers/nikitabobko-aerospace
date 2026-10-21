@@ -1,0 +1,47 @@
+= aerospace-sticky(1)
+include::util/man-attributes.adoc[]
+:manname: aerospace-sticky
+// tag::purpose[]
+:manpurpose: Toggle the sticky mode for the focused window
+// end::purpose[]
+
+// =========================================================== Synopsis
+== Synopsis
+[verse]
+// tag::synopsis[]
+aerospace sticky [-h|--help]     [--window-id <window-id>]
+aerospace sticky [-h|--help] on  [--window-id <window-id>] [--fail-if-noop]
+aerospace sticky [-h|--help] off [--window-id <window-id>] [--fail-if-noop]
+
+// end::synopsis[]
+
+// =========================================================== Description
+== Description
+
+// tag::body[]
+{manpurpose}
+
+A sticky window is visible on all workspaces regardless of which workspace is active.
+Sticky windows are always floating; a tiled window is automatically converted to a floating window when it becomes sticky.
+Stickiness and the window position are preserved across AeroSpace restarts if the `window-recovery` config option is enabled.
+
+// =========================================================== Options
+include::./util/conditional-options-header.adoc[]
+
+-h, --help:: Print help
+--fail-if-noop:: Exit with non-zero exit code if already sticky or already not sticky
+
+--window-id <window-id>::
+include::./util/window-id-flag-desc.adoc[]
+
+// =========================================================== Arguments
+include::./util/conditional-arguments-header.adoc[]
+
+on, off::
+`on` means make the window sticky. `off` means make the window not sticky.
+Toggle between the two if not specified
+
+// end::body[]
+
+// =========================================================== Footer
+include::util/man-footer.adoc[]

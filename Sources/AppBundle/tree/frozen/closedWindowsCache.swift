@@ -69,6 +69,7 @@ struct FrozenWorkspace: Sendable, Codable, Equatable {
         for frozenWindow in frozenWorkspace.floatingWindows {
             if let window = MacWindow.get(byId: frozenWindow.id) {
                 window.bindAsFloatingWindow(to: workspace)
+                window.isSticky = frozenWindow.isSticky
                 if let frame = frozenWindow.frame {
                     window.setAxFrame(CGPoint(x: frame.topLeftX, y: frame.topLeftY), CGSize(width: frame.width, height: frame.height))
                 }

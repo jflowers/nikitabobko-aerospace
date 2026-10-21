@@ -55,11 +55,22 @@ struct FrozenWindow: Sendable, Codable, Equatable {
     let weight: CGFloat
     // Top-left origin coordinates (same convention as `Rect`); only floating windows have frames
     let frame: FrozenFrame?
+    let isSticky: Bool
 
     @MainActor init(_ window: Window, frame: FrozenFrame? = nil) {
         id = window.windowId
         weight = getWeightOrNil(window) ?? 1
         self.frame = frame
+        isSticky = window.isSticky
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UInt32.self, forKey: .id)
+        weight = try container.decode(CGFloat.self, forKey: .weight)
+        frame = try container.decodeIfPresent(FrozenFrame.self, forKey: .frame)
+        // isSticky was added after frame; files saved by older versions don't have it
+        isSticky = try container.decodeIfPresent(Bool.self, forKey: .isSticky) ?? false
     }
 }
 

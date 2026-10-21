@@ -294,6 +294,7 @@ On the next startup, windows that still exist are moved back to the workspaces t
 If AeroSpace crashes or is SIGKILLed, the state from the previous clean quit is used
 * Windows that were closed between quit and startup are simply skipped
 * Floating windows are restored to their exact positions and sizes, including windows on non-visible workspaces
+* Sticky windows (see link:commands.html#_sticky[sticky command]) are restored as sticky
 * If some workspaces are missing on startup (e.g. you renamed them in the config), they are recreated on the fly,
 and removed automatically once they become empty
 
