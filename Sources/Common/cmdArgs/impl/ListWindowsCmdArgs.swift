@@ -17,6 +17,7 @@ public struct ListWindowsCmdArgs: CmdArgs {
             "--workspace": ArgParser(\.filteringOptions.workspaces, parseWorkspaces),
             "--pid": singleValueSubArgParser(\.filteringOptions.pidFilter, "<pid>") { Int32($0).toResult("Can't convert to Int32") },
             "--app-bundle-id": singleValueSubArgParser(\.filteringOptions.appIdFilter, "<app-bundle-id>", Result.success),
+            "--sticky": trueBoolFlag(\.filteringOptions.sticky),
 
             // Formatting flags
             "--format": formatParser(\._format, for: .window),
@@ -45,6 +46,7 @@ public struct ListWindowsCmdArgs: CmdArgs {
         public var workspaces: [WorkspaceFilter] = []
         public var pidFilter: Int32?
         public var appIdFilter: String?
+        public var sticky: Bool = false
     }
 }
 
@@ -179,6 +181,7 @@ public enum FormatVar: RawRepresentable, Equatable, CaseIterable, Sendable {
     public enum WindowFormatVar: String, Equatable, CaseIterable, Sendable {
         case windowId = "window-id"
         case windowIsFullscreen = "window-is-fullscreen"
+        case windowIsSticky = "window-is-sticky"
         case windowTitle = "window-title"
         case windowLayout = "window-layout" // An alias for windowParentContainerLayout
         case windowParentContainerLayout = "window-parent-container-layout"

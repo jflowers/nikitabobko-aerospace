@@ -26,6 +26,12 @@ final class ListWindowsTest: XCTestCase {
             "ERROR: Conflicting options: --all, --workspace")
         assertNil(parseCommand("list-windows --monitor mouse").errorOrNil)
 
+        // --sticky
+        assertEquals(parseCommand("list-windows --sticky").errorOrNil, "Mandatory option is not specified (--focused|--all|--monitor|--workspace)")
+        assertNil(parseCommand("list-windows --workspace M --sticky").errorOrNil)
+        assertEquals(parseCommand("list-windows --sticky --focused").errorOrNil, "--focused conflicts with other \"filtering\" flags")
+        assertEquals(parseCommand("list-windows --sticky --all").errorOrNil, "--all conflicts with \"filtering\" flags. Please use '--monitor all' instead of '--all' alias")
+
         // --json
         assertEquals(parseCommand("list-windows --all --count --json").errorOrNil, "ERROR: Conflicting options: --count, --json")
         assertEquals(parseCommand("list-windows --all --format '%{right-padding}' --json").errorOrNil, "%{right-padding} interpolation variable is not allowed when --json is used")
@@ -171,6 +177,33 @@ final class ListWindowsTest: XCTestCase {
         let mismatching = await parseCommand("list-windows --monitor all --pid 9999 --format '%{window-id}'").cmdOrDie.run(.defaultEnv, .emptyStdin)
         assertEquals(mismatching.exitCode.rawValue, 0)
         assertEquals(mismatching.stdout, [])
+    }
+
+    func testRunFilterBySticky() async {
+        let workspace = Workspace.get(byName: "a")
+        TestWindow.new(id: 1, parent: workspace.rootTilingContainer)
+        let sticky = TestWindow.new(id: 2, parent: workspace.floatingWindowsContainer)
+        sticky.isSticky = true
+        TestWindow.new(id: 3, parent: workspace.floatingWindowsContainer) // Regular floating window
+
+        let matching = await parseCommand("list-windows --monitor all --sticky --format '%{window-id}'").cmdOrDie.run(.defaultEnv, .emptyStdin)
+        assertEquals(matching.exitCode.rawValue, 0)
+        assertEquals(matching.stdout, ["2"])
+
+        let mismatching = await parseCommand("list-windows --workspace b --sticky --format '%{window-id}'").cmdOrDie.run(.defaultEnv, .emptyStdin)
+        assertEquals(mismatching.exitCode.rawValue, 0)
+        assertEquals(mismatching.stdout, [])
+    }
+
+    func testRunFormatWindowIsSticky() async {
+        let workspace = Workspace.get(byName: "a")
+        TestWindow.new(id: 1, parent: workspace.rootTilingContainer)
+        let sticky = TestWindow.new(id: 2, parent: workspace.floatingWindowsContainer)
+        sticky.isSticky = true
+
+        let result = await parseCommand("list-windows --monitor all --format '%{window-id} %{window-is-sticky}'").cmdOrDie.run(.defaultEnv, .emptyStdin)
+        assertEquals(result.exitCode.rawValue, 0)
+        assertEquals(result.stdout.sorted(), ["1 false", "2 true"])
     }
 
     func testRunFilterByAppBundleId() async {
