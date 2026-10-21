@@ -378,7 +378,10 @@ private final class AxWindow {
             (movedObs, [kAXMovedNotification]),
             (resizedObs, [kAXResizedNotification]),
         ]
-        let subscriptions = try unsafe AxSubscription.bulkSubscribe(nsApp, ax, job, handlers)
+        var subscriptions = try unsafe AxSubscription.bulkSubscribe(nsApp, ax, job, handlers)
+        // Title subscription goes in a separate bulkSubscribe call, because bulkSubscribe cancels all the
+        // subscriptions if any single one fails, and some apps may not support kAXTitleChangedNotification
+        subscriptions += try unsafe AxSubscription.bulkSubscribe(nsApp, ax, job, unsafe [(titleObs, [kAXTitleChangedNotification])])
         return !subscriptions.isEmpty ? AxWindow(windowId: windowId, ax, subscriptions) : nil
     }
 }

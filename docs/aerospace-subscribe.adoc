@@ -50,6 +50,8 @@ window-detected:: Fired when a new window is detected. Includes `windowId`, `wor
 
 binding-triggered:: Fired when a keyboard binding is triggered. Includes `binding`, `mode`.
 
+window-title-changed:: Fired when a window title changes. Includes `windowId`, `title`, `appBundleId`, `appName`, `workspace`.
+
 // =========================================================== Output Format
 include::util/conditional-output-format-header.adoc[]
 
@@ -60,6 +62,7 @@ Events are output as JSON lines (one JSON object per line):
 {"_event":"focused-workspace-changed","prevWorkspace":"M","workspace":"M"}
 {"_event":"mode-changed","mode":"main"}
 {"_event":"focus-changed","windowId":28218,"workspace":"M"}
+{"_event":"window-title-changed","appBundleId":"com.googlecode.iterm2","appName":"iTerm2","title":"gh/fullsend-ai","windowId":28219,"workspace":"1"}
 ----
 
 // end::body[]

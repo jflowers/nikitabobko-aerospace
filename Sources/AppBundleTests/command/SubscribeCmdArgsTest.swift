@@ -31,9 +31,19 @@ final class SubscribeCmdArgsTest: XCTestCase {
             case .failure(let err):
                 let expectedMsg = """
                     ERROR: Can't parse 'unknown-event'.
-                           Possible values: (focus-changed|focused-monitor-changed|focused-workspace-changed|mode-changed|window-detected|binding-triggered)
+                           Possible values: (focus-changed|focused-monitor-changed|focused-workspace-changed|mode-changed|window-detected|binding-triggered|window-title-changed)
                     """
                 assertEquals(err, .init(expectedMsg, 2))
+        }
+    }
+
+    func testParseWindowTitleChanged() {
+        let result = parseSubscribeCmdArgs(["window-title-changed"].slice)
+        switch result {
+            case .cmd(let args):
+                assertEquals(args.events, Set([.windowTitleChanged]))
+            case .help, .failure:
+                XCTFail("Expected success")
         }
     }
 
