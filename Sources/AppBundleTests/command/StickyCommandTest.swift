@@ -71,4 +71,23 @@ final class StickyCommandTest: XCTestCase {
         assertEquals(result.exitCode.rawValue, 2)
         assertEquals(result.stderr, ["No window is focused"])
     }
+
+    func testFocusingStickyWindowDoesNotSwitchWorkspace() {
+        let wsA = Workspace.get(byName: "wsA")
+        let wsB = Workspace.get(byName: "wsB")
+
+        let regular = TestWindow.new(id: 1, parent: wsA.rootTilingContainer)
+        assertEquals(regular.focusWindow(), true)
+        assertEquals(focus.workspace.name, "wsA")
+
+        let sticky = TestWindow.new(id: 2, parent: wsB.floatingWindowsContainer)
+        sticky.isSticky = true
+        assertEquals(sticky.focusWindow(), true)
+        assertEquals(focus.workspace.name, "wsA")
+        assertEquals(focus.windowOrNil?.windowId, 2)
+
+        let nonSticky = TestWindow.new(id: 3, parent: wsB.rootTilingContainer)
+        assertEquals(nonSticky.focusWindow(), true)
+        assertEquals(focus.workspace.name, "wsB")
+    }
 }

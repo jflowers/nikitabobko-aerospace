@@ -31,7 +31,14 @@ extension TreeNode {
 
     /// Also see: workspace
     @MainActor
-    var visualWorkspace: Workspace? { nodeWorkspace ?? nodeMonitor?.activeWorkspace }
+    var visualWorkspace: Workspace? {
+        if let window = self as? Window, window.isSticky, let monitor = nodeMonitor {
+            // Sticky windows are visible on all workspaces, and focusing them must not switch the workspace.
+            // Visually such window belongs to the workspace that is active on its monitor
+            return monitor.activeWorkspace
+        }
+        return nodeWorkspace ?? nodeMonitor?.activeWorkspace
+    }
 
     @MainActor
     var nodeMonitor: MonitorInfo? {
