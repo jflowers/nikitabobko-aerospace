@@ -14,17 +14,25 @@ final class SwitcherEventTap {
     private let anchorModifiers: NSEvent.ModifierFlags
     private let onCommit: @MainActor () -> Void
     private let onCancel: @MainActor () -> Void
+    private let onArrowPrev: @MainActor () -> Void
+    private let onArrowNext: @MainActor () -> Void
     private var tap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
 
     private static let escapeKeyCode: Int64 = 53
     private static let returnKeyCode: Int64 = 36
     private static let keypadEnterKeyCode: Int64 = 76
+    private static let leftArrowKeyCode: Int64 = 123
+    private static let rightArrowKeyCode: Int64 = 124
+    private static let downArrowKeyCode: Int64 = 125
+    private static let upArrowKeyCode: Int64 = 126
 
-    init(anchorModifiers: NSEvent.ModifierFlags, onCommit: @escaping @MainActor () -> Void, onCancel: @escaping @MainActor () -> Void) {
+    init(anchorModifiers: NSEvent.ModifierFlags, onCommit: @escaping @MainActor () -> Void, onCancel: @escaping @MainActor () -> Void, onArrowPrev: @escaping @MainActor () -> Void, onArrowNext: @escaping @MainActor () -> Void) {
         self.anchorModifiers = anchorModifiers
         self.onCommit = onCommit
         self.onCancel = onCancel
+        self.onArrowPrev = onArrowPrev
+        self.onArrowNext = onArrowNext
     }
 
     /// Must be called on the main thread
@@ -92,6 +100,12 @@ final class SwitcherEventTap {
                         return nil
                     case Self.returnKeyCode, Self.keypadEnterKeyCode:
                         MainActor.assumeIsolated(onCommit)
+                        return nil
+                    case Self.leftArrowKeyCode, Self.upArrowKeyCode:
+                        MainActor.assumeIsolated(onArrowPrev)
+                        return nil
+                    case Self.rightArrowKeyCode, Self.downArrowKeyCode:
+                        MainActor.assumeIsolated(onArrowNext)
                         return nil
                     default:
                         return event

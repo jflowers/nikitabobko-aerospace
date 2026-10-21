@@ -8,7 +8,7 @@ import Common
 ///    floating windows included), captures the anchor modifier (the modifiers currently held, `Shift` excluded) and
 ///    shows the overlay panel. The selection starts on the focused window and advances by one
 /// 2. Every subsequent invocation while the session is open advances the selection by one. Focus is never changed
-///    during the preview
+///    during the preview. Arrow keys move the selection (wrapping around); a mouse click on a cell commits it
 /// 3. The session ends on the anchor modifier release or `Enter` (commit: focus the selected window), on `Escape`
 ///    (cancel: keep the current focus), or on the idle timeout (cancel)
 ///
@@ -67,6 +67,8 @@ final class WindowSwitcherController {
                     anchorModifiers: anchorModifiers,
                     onCommit: { [weak self] in self?.commit() },
                     onCancel: { [weak self] in self?.cancel() },
+                    onArrowPrev: { [weak self] in self?.moveSelection(by: -1) },
+                    onArrowNext: { [weak self] in self?.moveSelection(by: 1) },
                 )
                 if tap.start() {
                     eventTap = tap
@@ -121,6 +123,23 @@ final class WindowSwitcherController {
         endSession()
     }
 
+    /// Moves the selection by `delta` positions (e.g. triggered by arrow keys). Wraps around the window list
+    func moveSelection(by delta: Int) {
+        guard var liveSession = session, !liveSession.windows.isEmpty else { return }
+        liveSession.selectedIndex = (liveSession.selectedIndex + delta + liveSession.windows.count) % liveSession.windows.count
+        session = liveSession
+        restartIdleTimer()
+        updatePanel()
+    }
+
+    /// Commits the selection at `index` (e.g. triggered by a mouse click on the corresponding panel cell)
+    func commitSelection(at index: Int) {
+        guard var liveSession = session, liveSession.windows.indices.contains(index) else { return }
+        liveSession.selectedIndex = index
+        session = liveSession
+        commit()
+    }
+
     private func endSession() {
         session = nil
         sessionGeneration += 1
@@ -151,6 +170,7 @@ final class WindowSwitcherController {
         SwitcherPanel.shared.update(
             with: viewModel(session),
             on: session.workspace.workspaceMonitor,
+            onSelect: { [weak self] index in self?.commitSelection(at: index) },
         )
         fetchTitle(ofSelectedWindowIn: session)
     }

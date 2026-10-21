@@ -169,4 +169,54 @@ final class WindowSwitcherTest: XCTestCase {
         controller.cancel()
         assertEquals(focus.windowOrNil?.windowId, 11)
     }
+
+    func testGuiArrowKeysMoveSelection() async {
+        Workspace.get(byName: name).rootTilingContainer.apply {
+            assertEquals(TestWindow.new(id: 1, parent: $0).focusWindow(), true)
+            TestWindow.new(id: 2, parent: $0)
+            TestWindow.new(id: 3, parent: $0)
+        }
+
+        let controller = WindowSwitcherController.shared
+        await parseCommand("focus dfs-next --gui").cmdOrDie.run(.defaultEnv, .emptyStdin)
+        assertEquals(controller.session?.selectedIndex, 1)
+
+        controller.moveSelection(by: 1)
+        assertEquals(controller.session?.selectedIndex, 2)
+        assertEquals(focus.windowOrNil?.windowId, 1) // focus is never changed during the preview
+
+        controller.moveSelection(by: 1)
+        assertEquals(controller.session?.selectedIndex, 0) // wraps around
+
+        controller.moveSelection(by: -1)
+        assertEquals(controller.session?.selectedIndex, 2) // wraps around backward
+
+        controller.commit()
+        assertEquals(focus.windowOrNil?.windowId, 3)
+        assertEquals(TestApp.shared.focusedWindow?.windowId, 3)
+    }
+
+    func testGuiCommitSelection() async {
+        Workspace.get(byName: name).rootTilingContainer.apply {
+            assertEquals(TestWindow.new(id: 1, parent: $0).focusWindow(), true)
+            TestWindow.new(id: 2, parent: $0)
+            TestWindow.new(id: 3, parent: $0)
+        }
+
+        let controller = WindowSwitcherController.shared
+        await parseCommand("focus dfs-next --gui").cmdOrDie.run(.defaultEnv, .emptyStdin)
+        assertEquals(controller.session?.selectedIndex, 1)
+
+        controller.commitSelection(at: 2)
+        assertEquals(focus.windowOrNil?.windowId, 3)
+        assertEquals(TestApp.shared.focusedWindow?.windowId, 3)
+        assertNil(controller.session)
+
+        // Invalid index is ignored without ending the session
+        await parseCommand("focus dfs-prev --gui").cmdOrDie.run(.defaultEnv, .emptyStdin)
+        controller.commitSelection(at: 42)
+        assertNotNil(controller.session)
+        assertEquals(controller.session?.selectedIndex, 1)
+        controller.cancel()
+    }
 }

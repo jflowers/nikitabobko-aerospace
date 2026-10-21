@@ -19,9 +19,9 @@ final class SwitcherPanel: NSPanelHud {
         super.init()
     }
 
-    func update(with model: SwitcherViewModel, on monitor: MonitorInfo) {
+    func update(with model: SwitcherViewModel, on monitor: MonitorInfo, onSelect: @escaping (Int) -> Void) {
         contentView?.subviews.removeAll()
-        let hostingView = NSHostingView(rootView: SwitcherView(model: model))
+        let hostingView = NSHostingView(rootView: SwitcherView(model: model, onSelect: onSelect))
         let panelSize = Self.panelSize(itemsCount: model.items.count)
         hostingView.frame = NSRect(origin: .zero, size: panelSize)
         contentView?.addSubview(hostingView)
@@ -57,6 +57,7 @@ final class SwitcherPanel: NSPanelHud {
 
 struct SwitcherView: View {
     let model: SwitcherViewModel
+    let onSelect: (Int) -> Void
 
     static let itemWidth: CGFloat = 128
     static let itemSpacing: CGFloat = 8
@@ -73,6 +74,7 @@ struct SwitcherView: View {
             HStack(spacing: SwitcherView.itemSpacing) {
                 ForEach(model.items.indices, id: \.self) { index in
                     cell(model.items[index], isSelected: index == model.selectedIndex)
+                        .onTapGesture { onSelect(index) }
                 }
             }
             Text(selectedTitle)
