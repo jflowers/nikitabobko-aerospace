@@ -219,4 +219,31 @@ final class WindowSwitcherTest: XCTestCase {
         assertEquals(controller.session?.selectedIndex, 1)
         controller.cancel()
     }
+
+    func testGuiIncludesStickyWindows() async {
+        let workspace = Workspace.get(byName: name)
+        workspace.rootTilingContainer.apply {
+            assertEquals(TestWindow.new(id: 1, parent: $0).focusWindow(), true)
+            TestWindow.new(id: 2, parent: $0)
+        }
+        // A sticky window bound to another workspace is visible on the same monitor and must be switchable in the GUI
+        let sticky = TestWindow.new(id: 3, parent: Workspace.get(byName: "wsB").floatingWindowsContainer)
+        sticky.isSticky = true
+
+        let controller = WindowSwitcherController.shared
+        await parseCommand("focus dfs-next --gui").cmdOrDie.run(.defaultEnv, .emptyStdin)
+        assertEquals(controller.session?.windows.map(\.windowId), [1, 2, 3] as [UInt32])
+        assertEquals(controller.session?.selectedIndex, 1)
+
+        await parseCommand("focus dfs-next --gui").cmdOrDie.run(.defaultEnv, .emptyStdin)
+        // The sticky window survives the staleness filter on session re-entry
+        assertEquals(controller.session?.windows.map(\.windowId), [1, 2, 3] as [UInt32])
+        assertEquals(controller.session?.selectedIndex, 2)
+
+        controller.commitSelection(at: 2)
+        assertEquals(focus.windowOrNil?.windowId, 3)
+        assertEquals(TestApp.shared.focusedWindow?.windowId, 3)
+        assertEquals(focus.workspace.name, name) // focusing a sticky window doesn't switch the workspace
+        assertNil(controller.session)
+    }
 }

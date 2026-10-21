@@ -5,8 +5,9 @@ import Common
 ///
 /// The lifecycle (all on MainActor):
 /// 1. The first `focus dfs-next --gui` invocation opens a session: it snapshots the workspace windows (in DFS order,
-///    floating windows included), captures the anchor modifier (the modifiers currently held, `Shift` excluded) and
-///    shows the overlay panel. The selection starts on the focused window and advances by one
+///    floating windows included) and the sticky windows of the monitor, captures the anchor modifier (the modifiers
+///    currently held, `Shift` excluded) and shows the overlay panel. The selection starts on the focused window and
+///    advances by one
 /// 2. Every subsequent invocation while the session is open advances the selection by one. Focus is never changed
 ///    during the preview. Arrow keys move the selection (wrapping around); a mouse click on a cell commits it
 /// 3. The session ends on the anchor modifier release or `Enter` (commit: focus the selected window), on `Escape`
@@ -83,9 +84,10 @@ final class WindowSwitcherController {
         guard var liveSession = session else { return nil }
 
         // The snapshot could become stale while the session is open: windows could be closed or moved to another
-        // workspace. Keep the selected window if it's still valid, clamp the index otherwise
+        // workspace. Keep the selected window if it's still valid, clamp the index otherwise.
+        // Sticky windows are visible on all workspaces of the monitor, so they stay even when bound to another workspace
         let selectedWindow = liveSession.windows.getOrNil(atIndex: liveSession.selectedIndex)
-        liveSession.windows = liveSession.windows.filter { $0.nodeWorkspace == workspace }
+        liveSession.windows = liveSession.windows.filter { $0.isSticky || $0.nodeWorkspace == workspace }
         if liveSession.windows.isEmpty {
             endSession()
             return .succ

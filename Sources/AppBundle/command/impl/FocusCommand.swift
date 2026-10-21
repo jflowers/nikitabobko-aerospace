@@ -45,7 +45,14 @@ struct FocusCommand: Command {
                     return .fail(io.err("Can't find window with DFS index \(dfsIndex)"))
                 }
             case .dfsRelative(let nextPrev):
-                let windows = target.workspace.rootTilingContainer.allLeafWindowsRecursive
+                var windows = target.workspace.rootTilingContainer.allLeafWindowsRecursive
+                if args.gui {
+                    // Sticky windows bound to other workspaces are visible on the current monitor as well; append them,
+                    // so that they are switchable in the GUI (they can't be temporarily rebinded into the tiling tree,
+                    // unlike the floating windows of the current workspace, because that would move them to another
+                    // workspace)
+                    windows += stickyWindows(on: target.workspace.workspaceMonitor)
+                }
                 guard let currentIndex = windows.firstIndex(where: { $0 == target.windowOrNil }) else {
                     return .fail(io.err("Can't find the focused window in the tiling tree of workspace '\(target.workspace.name)'"))
                 }
@@ -209,6 +216,17 @@ struct FocusCommand: Command {
     }
     for floating in floatingWindows {
         floating.window.bind(to: workspace.floatingWindowsContainer, adaptiveWeight: floating.adaptiveWeight, index: INDEX_BIND_LAST)
+    }
+}
+
+/// Sticky windows are visible on all workspaces of their monitor, so the GUI must offer them even when they are bound
+/// to another workspace. A window resides in exactly one container at a time, so it can't be duplicated with the
+/// windows rebinded into the tiling tree by `makeFloatingWindowsSeenAsTiling`
+@MainActor private func stickyWindows(on monitor: MonitorInfo) -> [Window] {
+    Workspace.all.flatMap { workspace in
+        workspace.floatingWindows.filter {
+            $0.isSticky && $0.nodeMonitor?.rect.topLeftCorner == monitor.rect.topLeftCorner
+        }
     }
 }
 
