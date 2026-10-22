@@ -116,4 +116,50 @@ final class WindowRecoveryTest: XCTestCase {
         let frozenWindow = frozenWorkspace.floatingWindows.first { $0.id == floating.windowId }!
         assertEquals(frozenWindow.frame, frame)
     }
+
+    func testLastVisibleFrameReconstructsPreHidePosition() {
+        let frame = MacWindow.lastVisibleFrame(
+            proportional: CGPoint(x: 0.25, y: 0.5),
+            workspaceRect: Rect(topLeftX: 0, topLeftY: 0, width: 1920, height: 1080),
+            size: CGSize(width: 800, height: 600),
+        )
+        assertEquals(frame.topLeftX, 480)
+        assertEquals(frame.topLeftY, 480)
+        assertEquals(frame.width, 800)
+        assertEquals(frame.height, 600)
+    }
+
+    func testLastVisibleFrameUsesGlobalWorkspaceRectCoordinates() {
+        let frame = MacWindow.lastVisibleFrame(
+            proportional: CGPoint(x: 0.5, y: 0.5),
+            workspaceRect: Rect(topLeftX: 1920, topLeftY: 0, width: 1920, height: 1080),
+            size: CGSize(width: 800, height: 600),
+        )
+        assertEquals(frame.topLeftX, 2880)
+        assertEquals(frame.topLeftY, 480)
+        assertEquals(frame.width, 800)
+        assertEquals(frame.height, 600)
+    }
+
+    func testLastVisibleFrameCoercesIntoWorkspaceRect() {
+        let frame = MacWindow.lastVisibleFrame(
+            proportional: CGPoint(x: 1, y: 1),
+            workspaceRect: Rect(topLeftX: 0, topLeftY: 0, width: 1920, height: 1080),
+            size: CGSize(width: 800, height: 600),
+        )
+        assertEquals(frame.topLeftX, 1120)
+        assertEquals(frame.topLeftY, 480)
+    }
+
+    func testLastVisibleFrameWithZeroSizeReturnsZeroSizeFrame() {
+        let frame = MacWindow.lastVisibleFrame(
+            proportional: CGPoint(x: 0.25, y: 0.5),
+            workspaceRect: Rect(topLeftX: 0, topLeftY: 0, width: 1920, height: 1080),
+            size: .zero,
+        )
+        assertEquals(frame.topLeftX, 480)
+        assertEquals(frame.topLeftY, 540)
+        assertEquals(frame.width, 0)
+        assertEquals(frame.height, 0)
+    }
 }

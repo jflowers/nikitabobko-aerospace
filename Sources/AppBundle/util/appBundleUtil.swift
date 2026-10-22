@@ -29,8 +29,15 @@ private struct AppServerTerminationHandler: TerminationHandler {
         if config.windowRecovery {
             saveWindowRecoveryState()
         }
-        // Make all windows fullscreen before Quit
+        // Restore the last visible window positions (if enabled) or center all windows before Quit
         for window in MacWindow.allWindowsMap.values {
+            if config.restoreWindowPositionsOnQuit,
+               let frame = window.realFrameForRecovery(),
+               frame.width > 0, frame.height > 0
+            {
+                window.macApp.setAxFrameForTermination(window.windowId, frame.topLeftCorner, frame.size)
+                continue
+            }
             // makeAllWindowsVisibleAndRestoreSize may be invoked when something went wrong (e.g. some windows are unbound)
             // that's why it's not allowed to use `.parent` call in here
             let monitor = window.macApp.getAxRectForTermination(window.windowId)?.center.monitorApproximation ?? mainMonitorInfo

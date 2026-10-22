@@ -144,6 +144,7 @@ private let configParser: [String: any ParserProtocol<Config>] = [
 
     "start-at-login": Parser(\.startAtLogin, parseBool),
     "window-recovery": Parser(\.windowRecovery, parseBool),
+    "restore-window-positions-on-quit": Parser(\.restoreWindowPositionsOnQuit, parseBool),
     "auto-reload-config": Parser(\.autoReloadConfig, parseBool),
     "automatically-unhide-macos-hidden-apps": Parser(\.automaticallyUnhideMacosHiddenApps, parseBool),
     "accordion-padding": Parser(\.accordionPadding, parseInt),

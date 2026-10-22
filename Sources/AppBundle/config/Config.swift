@@ -43,6 +43,7 @@ struct Config: ConvenienceMutable {
     var defaultRootContainerOrientation: DefaultContainerOrientation = .auto
     var startAtLogin: Bool = false
     var windowRecovery: Bool = false
+    var restoreWindowPositionsOnQuit: Bool = false
     var autoReloadConfig: Bool = false
     var automaticallyUnhideMacosHiddenApps: Bool = false
     var accordionPadding: Int = 30

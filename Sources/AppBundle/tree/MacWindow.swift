@@ -184,18 +184,21 @@ final class MacWindow: Window {
 
     /// Best-effort frame for window-recovery persistence. If the window is hidden in corner (its workspace is not
     /// visible), reconstructs the pre-hide frame; otherwise reads the live frame
+    /// Reconstructs the last visible frame from the proportional position saved by `hideInCorner` (mirrors `unhideFromCorner`)
+    static func lastVisibleFrame(proportional: CGPoint, workspaceRect: Rect, size: CGSize) -> Rect {
+        var newX = workspaceRect.topLeftX + workspaceRect.width * proportional.x
+        var newY = workspaceRect.topLeftY + workspaceRect.height * proportional.y
+        newX = newX.coerce(in: workspaceRect.minX ... max(workspaceRect.minX, workspaceRect.maxX - size.width))
+        newY = newY.coerce(in: workspaceRect.minY ... max(workspaceRect.minY, workspaceRect.maxY - size.height))
+        return Rect(topLeftX: newX, topLeftY: newY, width: size.width, height: size.height)
+    }
+
     @MainActor
     func realFrameForRecovery() -> Rect? {
         if let proportional = prevUnhiddenProportionalPositionInsideWorkspaceRect, let nodeWorkspace {
-            // Mirror the `unhideFromCorner` math
-            let workspaceRect = nodeWorkspace.workspaceMonitor.rect
-            var newX = workspaceRect.topLeftX + workspaceRect.width * proportional.x
-            var newY = workspaceRect.topLeftY + workspaceRect.height * proportional.y
             // `hideInCorner` moves position only, so the live size is still the pre-hide size
             let size = lastFloatingSize ?? macApp.getAxRectForTermination(windowId)?.size ?? .zero
-            newX = newX.coerce(in: workspaceRect.minX ... max(workspaceRect.minX, workspaceRect.maxX - size.width))
-            newY = newY.coerce(in: workspaceRect.minY ... max(workspaceRect.minY, workspaceRect.maxY - size.height))
-            return Rect(topLeftX: newX, topLeftY: newY, width: size.width, height: size.height)
+            return Self.lastVisibleFrame(proportional: proportional, workspaceRect: nodeWorkspace.workspaceMonitor.rect, size: size)
         }
         return macApp.getAxRectForTermination(windowId)
     }

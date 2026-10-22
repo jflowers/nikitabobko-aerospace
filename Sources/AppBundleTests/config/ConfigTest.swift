@@ -79,7 +79,25 @@ final class ConfigTest: XCTestCase {
             window-recovery = 'true'
             """,
         ).strErrors
-        assertEquals(errors, ["[ERROR] window-recovery: Expected type is \'Bool\'. But actual type is \'String\'"])
+        assertEquals(errors, ["[ERROR] window-recovery: Expected type is 'Bool'. But actual type is 'String'"])
+    }
+
+    func testParseRestoreWindowPositionsOnQuit() {
+        let result = parseConfig(
+            """
+            restore-window-positions-on-quit = true
+            """,
+        )
+        assertEquals(result.errors, [])
+        assertEquals(result.config.restoreWindowPositionsOnQuit, true)
+        assertEquals(parseConfig("").config.restoreWindowPositionsOnQuit, false)
+
+        let errors = parseConfig(
+            """
+            restore-window-positions-on-quit = 'true'
+            """,
+        ).strErrors
+        assertEquals(errors, ["[ERROR] restore-window-positions-on-quit: Expected type is 'Bool'. But actual type is 'String'"])
     }
 
     func testKeybindingsDisabledForFrontmostApps() {
