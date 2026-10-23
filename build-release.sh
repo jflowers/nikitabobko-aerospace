@@ -4,10 +4,12 @@ source ./script/setup.sh
 
 build_version="0.0.0-SNAPSHOT"
 codesign_identity="aerospace-codesign-certificate"
+allow_dirty=0
 while test $# -gt 0; do
     case $1 in
         --build-version) build_version="$2"; shift 2;;
         --codesign-identity) codesign_identity="$2"; shift 2;;
+        --allow-dirty) allow_dirty=1; shift;;
         *) echo "Unknown option $1" > /dev/stderr; exit 1 ;;
     esac
 done
@@ -20,7 +22,9 @@ done
 ./build-shell-completion.sh
 
 ./generate.sh
-./script/check-uncommitted-files.sh
+if test $allow_dirty == 0; then
+    ./script/check-uncommitted-files.sh
+fi
 ./generate.sh --build-version "$build_version" --codesign-identity "$codesign_identity" --generate-git-hash
 
 swift_build_cli=(build -c release --arch arm64 --arch x86_64 --product aerospace)
@@ -39,7 +43,15 @@ cd ./xcode
         -derivedDataPath .xcode-build
 cd -
 
-git checkout .
+# Restore only the files that generate.sh dirties (unlike upstream `git checkout .`,
+# this doesn't wipe uncommitted changes; use --allow-dirty to build with a dirty tree)
+git checkout -- \
+    Package.swift \
+    Sources/Common/versionGenerated.swift \
+    Sources/Common/gitHashGenerated.swift \
+    Sources/Common/cmdHelpGenerated.swift \
+    Sources/Cli/subcommandDescriptionsGenerated.swift \
+    xcode/AeroSpace.xcodeproj
 
 cp -r "xcode/.xcode-build/Build/Products/$xcode_configuration/AeroSpace.app" .release
 cp -r "$cli_bin_path/aerospace" .release
