@@ -40,22 +40,53 @@ public func menuBar(viewModel: TrayMenuModel) -> some Scene { // todo should it 
                     }
                 }
                 Menu {
-                    ForEach(viewModel.workspaces, id: \.name) { workspace in
-                        Button {
-                            Task.startUnstructured {
-                                try await runLightSession(.menuBarButton, token) {
-                                    var args = MoveNodeToWorkspaceCmdArgs(rawArgs: [])
-                                    args.target = .direct(WorkspaceName.parse(workspace.name).getOrDie())
-                                    _ = await MoveNodeToWorkspaceCommand(args: args).run(.defaultEnv, .emptyStdin)
+                    Menu {
+                        ForEach(viewModel.workspaces, id: \.name) { workspace in
+                            Button {
+                                Task.startUnstructured {
+                                    try await runLightSession(.menuBarButton, token) {
+                                        var args = MoveNodeToWorkspaceCmdArgs(rawArgs: [])
+                                        args.target = .direct(WorkspaceName.parse(workspace.name).getOrDie())
+                                        _ = await MoveNodeToWorkspaceCommand(args: args).run(.defaultEnv, .emptyStdin)
+                                    }
                                 }
+                            } label: {
+                                Text(workspace.name + workspace.suffix).font(.system(.body, design: .monospaced))
                             }
-                        } label: {
-                            Text(workspace.name + workspace.suffix).font(.system(.body, design: .monospaced))
+                            .disabled(workspace.isFocused)
                         }
-                        .disabled(workspace.isFocused)
+                    } label: {
+                        Text("Move to workspace")
                     }
+                    Divider()
+                    Button {
+                        Task.startUnstructured {
+                            try await runLightSession(.menuBarButton, token) {
+                                let args = LayoutCmdArgs(rawArgs: [], toggleBetween: [.floating, .tiling])
+                                _ = await LayoutCommand(args: args).run(.defaultEnv, .emptyStdin)
+                            }
+                        }
+                    } label: {
+                        Toggle(isOn: .constant(viewModel.focusedWindow?.isFloating ?? false)) {
+                            Text("Float")
+                        }
+                    }
+                    .disabled(viewModel.focusedWindow == nil)
+                    Button {
+                        Task.startUnstructured {
+                            try await runLightSession(.menuBarButton, token) {
+                                let args = StickyCmdArgs(rawArgs: [], toggle: .toggle)
+                                _ = await StickyCommand(args: args).run(.defaultEnv, .emptyStdin)
+                            }
+                        }
+                    } label: {
+                        Toggle(isOn: .constant(viewModel.focusedWindow?.isSticky ?? false)) {
+                            Text("Sticky")
+                        }
+                    }
+                    .disabled(viewModel.focusedWindow == nil)
                 } label: {
-                    Text("Move focused window to workspace")
+                    Text("Focused window")
                 }
                 Divider()
             }

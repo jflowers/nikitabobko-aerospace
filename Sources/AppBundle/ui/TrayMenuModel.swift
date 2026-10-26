@@ -11,6 +11,7 @@ public final class TrayMenuModel: ObservableObject {
     /// Is "layouting" enabled
     @Published var isEnabled: Bool = true
     @Published var workspaces: [WorkspaceViewModel] = []
+    @Published var focusedWindow: FocusedWindowViewModel? = nil
     @Published var experimentalUISettings: ExperimentalUISettings = ExperimentalUISettings()
     @Published var sponsorshipMessage: String = sponsorshipPrompts.randomElement().orDie()
     @Published var lastReloadConfigContainedWarnings: Bool = false
@@ -52,6 +53,9 @@ enum AxPermissionStatus: Equatable {
             hasFullscreenWindows: hasFullscreenWindows,
         )
     }
+    TrayMenuModel.shared.focusedWindow = focus.windowOrNil.map {
+        FocusedWindowViewModel(isFloating: $0.isFloating, isSticky: $0.isSticky)
+    }
     var items = sortedMonitors.map {
         let hasFullscreenWindows = $0.activeWorkspace.allLeafWindowsRecursive.contains { $0.isFullscreen }
         return TrayItem(
@@ -77,6 +81,11 @@ struct WorkspaceViewModel: Hashable {
     let isEffectivelyEmpty: Bool
     let isVisible: Bool
     let hasFullscreenWindows: Bool
+}
+
+struct FocusedWindowViewModel: Hashable {
+    let isFloating: Bool
+    let isSticky: Bool
 }
 
 enum TrayItemType: String, Hashable {
