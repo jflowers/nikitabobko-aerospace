@@ -41,6 +41,11 @@ open class Window: TreeNode, Hashable {
     func getCenter(_ cm: CancellationMode) async throws -> CGPoint? { try await getAxRect(cm)?.center }
 
     func setAxFrame(_ topLeft: CGPoint?, _ size: CGSize?) { die("Not implemented") }
+
+    /// Synchronous version of `setAxFrame`. Returns only after the frame change is committed
+    func setAxFrameSync(_ topLeft: CGPoint?, _ size: CGSize?) async {
+        setAxFrame(topLeft, size)
+    }
 }
 
 enum LayoutReason: Equatable {

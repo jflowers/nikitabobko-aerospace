@@ -245,6 +245,20 @@ include::aerospace-run-callback.adoc[tags=synopsis]
 include::aerospace-run-callback.adoc[tags=purpose]
 include::aerospace-run-callback.adoc[tags=body]
 
+== set-frame
+----
+include::aerospace-set-frame.adoc[tags=synopsis]
+----
+include::aerospace-set-frame.adoc[tags=purpose]
+include::aerospace-set-frame.adoc[tags=body]
+
+== snap-window
+----
+include::aerospace-snap-window.adoc[tags=synopsis]
+----
+include::aerospace-snap-window.adoc[tags=purpose]
+include::aerospace-snap-window.adoc[tags=body]
+
 == split
 ----
 include::aerospace-split.adoc[tags=synopsis]

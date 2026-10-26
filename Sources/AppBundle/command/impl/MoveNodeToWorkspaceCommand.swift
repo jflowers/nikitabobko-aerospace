@@ -5,11 +5,15 @@ struct MoveNodeToWorkspaceCommand: Command {
     /*conforms*/ let shouldResetClosedWindowsCache: Bool = true
 
     func run(_ env: CmdEnv, _ io: CmdIo) -> BinaryExitCode {
+        if args.gui {
+            return runGui(env, io)
+        }
+        guard let targetArg = args.target else { return .fail(io.err(bugPrompt("--gui must be set"))) }
         guard let target = args.resolveTargetOrReportError(env, io) else { return .fail }
         guard let window = target.windowOrNil else { return .fail(io.err(noWindowIsFocused)) }
         let subjectWs = window.nodeWorkspace
         let targetWorkspace: Workspace
-        switch args.target.val {
+        switch targetArg {
             case .relative(let nextPrev):
                 guard let subjectWs else { return .fail(io.err("Window \(window.windowId) doesn't belong to any workspace")) }
                 let ws = getNextPrevWorkspace(
@@ -25,6 +29,23 @@ struct MoveNodeToWorkspaceCommand: Command {
                 targetWorkspace = Workspace.get(byName: name.raw)
         }
         return moveWindowToWorkspace(window, targetWorkspace, io, focusFollowsWindow: args.focusFollowsWindow, failIfNoop: args.failIfNoop)
+    }
+
+    @MainActor
+    private func runGui(_ env: CmdEnv, _ io: CmdIo) -> BinaryExitCode {
+        guard let target = args.resolveTargetOrReportError(env, io) else { return .fail }
+        guard let window = target.windowOrNil else { return .fail(io.err(noWindowIsFocused)) }
+        let workspaces = Workspace.all
+        let selectedIndex = workspaces.firstIndex { $0 === window.nodeWorkspace } ?? 0
+        let code = WorkspacePickerController.shared.open(
+            windowId: window.windowId,
+            workspaces: workspaces,
+            selectedIndex: selectedIndex,
+            monitor: target.workspace.workspaceMonitor,
+            focusFollowsWindow: args.focusFollowsWindow,
+            failIfNoop: args.failIfNoop,
+        )
+        return code ?? .fail(io.err("Can't open the workspace picker GUI"))
     }
 }
 

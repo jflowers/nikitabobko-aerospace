@@ -74,6 +74,10 @@ extension CmdArgs {
                 command = ResizeCommand(args: self as! ResizeCmdArgs)
             case .runCallback:
                 command = RunCallbackCommand(args: self as! RunCallbackCmdArgs)
+            case .setFrame:
+                command = SetFrameCommand(args: self as! SetFrameCmdArgs)
+            case .snapWindow:
+                command = SnapWindowCommand(args: self as! SnapWindowCmdArgs)
             case .split:
                 command = SplitCommand(args: self as! SplitCmdArgs)
             case .sticky:

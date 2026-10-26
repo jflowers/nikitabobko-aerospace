@@ -77,6 +77,10 @@ If not specified, the default `<output-format>` is: +
 The following variables can be used inside `<output-format>`:
 
 %{window-id}:: Number. Window unique ID
+%{frame-x}:: Number. The x coordinate of the window's top-left corner, in points, in the global coordinate space (the origin is the top-left corner of the main monitor, the `y` axis goes down)
+%{frame-y}:: Number. The y coordinate of the window's top-left corner, in points, in the global coordinate space (the origin is the top-left corner of the main monitor, the `y` axis goes down)
+%{frame-w}:: Number. The window width in points
+%{frame-h}:: Number. The window height in points
 %{window-title}:: String. Window title
 %{window-is-fullscreen}:: Boolean. Is window in fullscreen by `aerospace fullscreen` command
 %{window-layout}:: String. An alias for `%{window-parent-container-layout}`

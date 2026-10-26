@@ -286,7 +286,7 @@ struct ParseConfigResult {
             .flatMap { (binding: HotkeyBinding) -> [String] in
                 let commands = binding.commands.flatten()
                 return commands.filterIsInstance(of: WorkspaceCommand.self).compactMap { $0.args.target.val.workspaceNameOrNil()?.raw } +
-                    commands.filterIsInstance(of: MoveNodeToWorkspaceCommand.self).compactMap { $0.args.target.val.workspaceNameOrNil()?.raw }
+                    commands.filterIsInstance(of: MoveNodeToWorkspaceCommand.self).compactMap { $0.args.target?.workspaceNameOrNil()?.raw }
             }
             + (config.workspaceToMonitorForceAssignment).keys)
             .toOrderedSet()

@@ -9,6 +9,14 @@ import Common
 /// so that once the screen is unlocked, AeroSpace could restore windows to where they were
 @MainActor private var closedWindowsCache = FrozenWorld(workspaces: [], monitors: [], windowIds: [])
 
+/// Windows restored during AeroSpace startup (window-recovery) skip `on-window-detected` callbacks at detection time
+/// (see `MacWindow.get`); the config rules are expected to apply after restart, so the callbacks are deferred until
+/// the startup detection completes and then run once via `runDeferredOnWindowDetected()`. Deferring (as opposed to
+/// running the callbacks right away) is important, because a later cache restore triggered by another newly detected
+/// window would re-bind the windows that the earlier callbacks had already moved or floated.
+/// Post-startup restores (e.g. after screen unlock) don't collect the windows and keep the legacy "skip" behavior.
+@MainActor private var deferredOnWindowDetectedWindowIds: [UInt32] = []
+
 struct FrozenMonitor: Sendable, Codable, Equatable {
     let topLeftCorner: CGPoint
     let visibleWorkspace: String
@@ -58,6 +66,9 @@ struct FrozenWorkspace: Sendable, Codable, Equatable {
     if !closedWindowsCache.windowIds.contains(newlyDetectedWindow.windowId) {
         return false
     }
+    if isStartup, !deferredOnWindowDetectedWindowIds.contains(newlyDetectedWindow.windowId) {
+        deferredOnWindowDetectedWindowIds.append(newlyDetectedWindow.windowId)
+    }
     let monitors = monitorInfos
     let topLeftCornerToMonitor = monitors.grouped { $0.rect.topLeftCorner }
 
@@ -93,6 +104,17 @@ struct FrozenWorkspace: Sendable, Codable, Equatable {
             .setActiveWorkspace(Workspace.get(byName: monitor.visibleWorkspace))
     }
     return true
+}
+
+/// Run `on-window-detected` callbacks for the windows restored during startup. See `deferredOnWindowDetectedWindowIds`
+@MainActor func runDeferredOnWindowDetected() async {
+    let windowIds = deferredOnWindowDetectedWindowIds
+    deferredOnWindowDetectedWindowIds = []
+    for windowId in windowIds {
+        if let window = Window.get(byId: windowId) {
+            await runOnWindowDetected(ifConventional: window)
+        }
+    }
 }
 
 @discardableResult

@@ -10,7 +10,7 @@ include::util/man-attributes.adoc[]
 [verse]
 // tag::synopsis[]
 aerospace workspace [-h|--help] [--auto-back-and-forth] [--fail-if-noop] [--] <workspace-name>
-aerospace workspace [-h|--help] [--wrap-around] [--stdin|--no-stdin] (next|prev)
+aerospace workspace [-h|--help] [--wrap-around] [--stdin|--no-stdin] [--gui] (next|prev)
 
 // end::synopsis[]
 
@@ -51,6 +51,13 @@ Incompatible with `--no-stdin`
 Ignore the list of workspaces from stdin, even if provided.
 Incompatible with `--stdin`
 
+--gui::
+Show a vertical overlay to cycle through the workspaces from *the list*. +
+The overlay opens with the selection on the focused workspace; every invocation of the command advances the selection by one workspace, wrapping around only if `--wrap-around` is passed. `up`/`left` arrows move the selection toward the top of the list, `down`/`right` toward the bottom. +
+The workspace is focused only when the modifier that is held during the first invocation (excluding `Shift`) is released, or when `Enter` is pressed, or when a workspace row is clicked. +
+`Escape` cancels the picking and keeps the current workspace focused. +
+If no modifier is held (e.g. when the command is triggered from CLI), the overlay isn't shown and the workspace is switched immediately.
+
 // =========================================================== Arguments
 include::./util/conditional-arguments-header.adoc[]
 
@@ -61,6 +68,9 @@ include::util/conditional-examples-header.adoc[]
 
 * Go to the next non empty workspace on the focused monitor: +
 `aerospace list-workspaces --monitor focused --empty no | aerospace workspace --stdin next`
+
+* Cycle through the non empty workspaces on the focused monitor with a GUI overlay: +
+`aerospace list-workspaces --monitor focused --empty no | aerospace workspace --stdin --gui --wrap-around next`
 
 // end::body[]
 

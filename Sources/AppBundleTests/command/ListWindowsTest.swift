@@ -43,7 +43,7 @@ final class ListWindowsTest: XCTestCase {
         for kind in AeroObjKind.allCases {
             switch kind {
                 case .window:
-                    assertTrue(FormatVar.WindowFormatVar.allCases.allSatisfy { $0.rawValue.starts(with: "window-") })
+                    assertTrue(FormatVar.WindowFormatVar.allCases.allSatisfy { $0.rawValue.starts(with: "window-") || $0.rawValue.starts(with: "frame-") })
                 case .app:
                     assertTrue(FormatVar.AppFormatVar.allCases.allSatisfy { $0.rawValue.starts(with: "app-") })
                 case .workspace:
@@ -105,6 +105,15 @@ final class ListWindowsTest: XCTestCase {
         assertEquals(result.exitCode.rawValue, 0)
         assertEquals(result.stderr, [])
         assertEquals(result.stdout.sorted(), ["1", "2"])
+    }
+
+    func testRunFrameFormatVars() async {
+        let workspace = Workspace.get(byName: name)
+        TestWindow.new(id: 1, parent: workspace.floatingWindowsContainer, rect: Rect(topLeftX: 10, topLeftY: 20, width: 300, height: 200))
+        let result = await parseCommand("list-windows --all --format '%{window-id} %{frame-x} %{frame-y} %{frame-w} %{frame-h}'").cmdOrDie.run(.defaultEnv, .emptyStdin)
+        assertEquals(result.exitCode.rawValue, 0)
+        assertEquals(result.stderr, [])
+        assertEquals(result.stdout, ["1 10 20 300 200"])
     }
 
     func testRunCount() async {

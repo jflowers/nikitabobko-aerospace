@@ -3,19 +3,20 @@ import Common
 import CoreGraphics
 import Foundation
 
-/// Observes system events while the window switcher GUI session is open (see `WindowSwitcherController`):
-/// * Commit the selection when the anchor modifier is released (native `Cmd+Tab` semantics)
+/// Observes system events while a GUI session is open (see `WindowSwitcherController` and `WorkspacePickerController`):
+/// * Commit the selection when the anchor modifier is released (native `Cmd+Tab` semantics); disabled if `anchorModifiers` is `nil`
 /// * Cancel the session on `Escape`
 /// * Commit the session on `Return`/`Enter`
 ///
 /// Requires Accessibility (and possibly Input Monitoring) permission; `start()` returns `false` if the event tap
-/// can't be created, in which case the caller should fall back to the immediate focus behavior
+/// can't be created, in which case the caller should fall back to the immediate behavior
 final class SwitcherEventTap {
-    private let anchorModifiers: NSEvent.ModifierFlags
+    private let anchorModifiers: NSEvent.ModifierFlags?
     private let onCommit: @MainActor () -> Void
     private let onCancel: @MainActor () -> Void
     private let onArrowPrev: @MainActor () -> Void
     private let onArrowNext: @MainActor () -> Void
+    private let tapCreationFailureMessage: String
     private var tap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
 
@@ -26,19 +27,31 @@ final class SwitcherEventTap {
     private static let rightArrowKeyCode: Int64 = 124
     private static let downArrowKeyCode: Int64 = 125
     private static let upArrowKeyCode: Int64 = 126
+    private static let defaultTapCreationFailureMessage =
+        "aerospace: Can't create CGEventTap for the window switcher GUI. " +
+        "Make sure AeroSpace has Accessibility permission, and try granting Input Monitoring permission " +
+        "(System Settings -> Privacy & Security). Falling back to immediate focus"
 
-    init(anchorModifiers: NSEvent.ModifierFlags, onCommit: @escaping @MainActor () -> Void, onCancel: @escaping @MainActor () -> Void, onArrowPrev: @escaping @MainActor () -> Void, onArrowNext: @escaping @MainActor () -> Void) {
+    init(
+        anchorModifiers: NSEvent.ModifierFlags?,
+        onCommit: @escaping @MainActor () -> Void,
+        onCancel: @escaping @MainActor () -> Void,
+        onArrowPrev: @escaping @MainActor () -> Void,
+        onArrowNext: @escaping @MainActor () -> Void,
+        tapCreationFailureMessage: String = SwitcherEventTap.defaultTapCreationFailureMessage,
+    ) {
         self.anchorModifiers = anchorModifiers
         self.onCommit = onCommit
         self.onCancel = onCancel
         self.onArrowPrev = onArrowPrev
         self.onArrowNext = onArrowNext
+        self.tapCreationFailureMessage = tapCreationFailureMessage
     }
 
     /// Must be called on the main thread
     func start() -> Bool {
         let eventMask =
-            CGEventMask(1 << CGEventType.flagsChanged.rawValue) |
+            (anchorModifiers != nil ? CGEventMask(1 << CGEventType.flagsChanged.rawValue) : CGEventMask(0)) |
             CGEventMask(1 << CGEventType.keyDown.rawValue)
         let createdTap = unsafe CGEvent.tapCreate(
             tap: .cgSessionEventTap,
@@ -49,11 +62,7 @@ final class SwitcherEventTap {
             userInfo: Unmanaged.passUnretained(self).toOpaque(),
         )
         guard let tap = createdTap else {
-            eprint(
-                "aerospace: Can't create CGEventTap for the window switcher GUI. " +
-                    "Make sure AeroSpace has Accessibility permission, and try granting Input Monitoring permission " +
-                    "(System Settings -> Privacy & Security). Falling back to immediate focus",
-            )
+            eprint(tapCreationFailureMessage)
             return false
         }
         self.tap = tap
@@ -87,10 +96,12 @@ final class SwitcherEventTap {
                 // Re-enabled eagerly by `switcherEventTapCallback`
                 return event
             case .flagsChanged:
-                let flags = NSEvent.ModifierFlags(rawValue: UInt(event.flags.rawValue))
-                if flags.isDisjoint(with: anchorModifiers) {
-                    // The event tap source is attached to the main run loop, so the callback runs on the main thread
-                    MainActor.assumeIsolated(onCommit)
+                if let anchorModifiers {
+                    let flags = NSEvent.ModifierFlags(rawValue: UInt(event.flags.rawValue))
+                    if flags.isDisjoint(with: anchorModifiers) {
+                        // The event tap source is attached to the main run loop, so the callback runs on the main thread
+                        MainActor.assumeIsolated(onCommit)
+                    }
                 }
                 return event
             case .keyDown:
@@ -117,7 +128,7 @@ final class SwitcherEventTap {
 }
 
 private func switcherEventTapCallback(
-    _ proxy: CGEventTapProxy,
+    _ _: CGEventTapProxy,
     _ type: CGEventType,
     _ event: CGEvent,
     _ userInfo: UnsafeMutableRawPointer?,

@@ -1,0 +1,41 @@
+= aerospace-set-frame(1)
+include::util/man-attributes.adoc[]
+:manname: aerospace-set-frame
+// tag::purpose[]
+:manpurpose: Set the frame (position and size) of a floating window
+// end::purpose[]
+
+// =========================================================== Synopsis
+== Synopsis
+[verse]
+// tag::synopsis[]
+aerospace set-frame [-h|--help] [--window-id <window-id>] <x> <y> <width> <height>
+
+// end::synopsis[]
+
+// =========================================================== Description
+== Description
+
+// tag::body[]
+{manpurpose}
+
+The command works only on floating windows. To float a window use `aerospace layout floating`.
+
+The coordinates are measured in points in the global coordinate space with the origin in the top-left corner
+of the main monitor. The `y` axis goes down (the same convention as in macOS Accessibility API).
+
+If the requested frame is partially off-screen, it is clamped to the visible frame (the frame that excludes
+the menu bar, the dock and the notch) of the monitor that has the largest overlap with the requested frame.
+
+// =========================================================== Options
+include::./util/conditional-options-header.adoc[]
+
+-h, --help:: Print help
+
+--window-id <window-id>::
+include::./util/window-id-flag-desc.adoc[]
+
+// end::body[]
+
+// =========================================================== Footer
+include::util/man-footer.adoc[]

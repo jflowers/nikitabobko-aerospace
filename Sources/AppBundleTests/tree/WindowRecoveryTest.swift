@@ -8,6 +8,7 @@ final class WindowRecoveryTest: XCTestCase {
 
     override func setUp() async throws {
         setUpWorkspacesForTests()
+        resetClosedWindowsCache()
         fileUrl = FileManager.default.temporaryDirectory
             .appending(component: "window-recovery-test-\(UUID().uuidString)")
             .appending(component: "window-recovery.json")
@@ -15,6 +16,7 @@ final class WindowRecoveryTest: XCTestCase {
     }
 
     override func tearDown() async throws {
+        resetClosedWindowsCache()
         try? FileManager.default.removeItem(at: fileUrl.deletingLastPathComponent())
         fileUrl = nil
     }
@@ -161,5 +163,55 @@ final class WindowRecoveryTest: XCTestCase {
         assertEquals(frame.topLeftY, 540)
         assertEquals(frame.width, 0)
         assertEquals(frame.height, 0)
+    }
+
+    func testOnWindowDetectedIsDeferredForRestoredWindowsAtStartup() async throws {
+        // Simulate the previous session state: window 1 is tiled in workspace 'ws'
+        let ws = Workspace.get(byName: "ws")
+        let window = TestWindow.new(id: 1, parent: ws.rootTilingContainer)
+        seedClosedWindowsCache(snapshotFrozenWorld())
+
+        // Simulate a fresh start: the re-detected window is initially bound to the focused workspace
+        // before restoreClosedWindowsCacheIfNeeded rebinds it back to 'ws'
+        window.bind(to: Workspace.get(byName: name).rootTilingContainer, adaptiveWeight: 1, index: INDEX_BIND_LAST)
+
+        config.onWindowDetected = [WindowDetectedCallback(
+            matcher: .command(.empty),
+            rawRun: parseCommand("layout floating").cmdOrDie,
+        )]
+
+        try await $refreshSessionEvent.withValue(.startup) {
+            let isRestored = try await restoreClosedWindowsCacheIfNeeded(newlyDetectedWindow: window)
+            assertEquals(isRestored, true)
+            // The window is restored into the frozen tiling tree; the callbacks have not run yet
+            assertEquals(ws.rootTilingContainer.allLeafWindowsRecursive.map(\.windowId), [1])
+
+            await runDeferredOnWindowDetected()
+        }
+
+        // The deferred callbacks have been applied: the window is floating now
+        assertEquals(ws.floatingWindows.map(\.windowId), [1])
+        assertEquals(ws.rootTilingContainer.allLeafWindowsRecursive.count, 0)
+    }
+
+    func testOnWindowDetectedIsSkippedForRestoredWindowsAfterStartup() async throws {
+        // Same setup as the startup test, but the detection happens after startup (e.g. screen unlock):
+        // restored windows must keep skipping on-window-detected callbacks
+        let ws = Workspace.get(byName: "ws")
+        let window = TestWindow.new(id: 1, parent: ws.rootTilingContainer)
+        seedClosedWindowsCache(snapshotFrozenWorld())
+        window.bind(to: Workspace.get(byName: name).rootTilingContainer, adaptiveWeight: 1, index: INDEX_BIND_LAST)
+
+        config.onWindowDetected = [WindowDetectedCallback(
+            matcher: .command(.empty),
+            rawRun: parseCommand("layout floating").cmdOrDie,
+        )]
+
+        let isRestored = try await restoreClosedWindowsCacheIfNeeded(newlyDetectedWindow: window)
+        assertEquals(isRestored, true)
+        await runDeferredOnWindowDetected() // no-op: nothing is deferred outside startup
+
+        assertEquals(ws.rootTilingContainer.allLeafWindowsRecursive.map(\.windowId), [1])
+        assertEquals(ws.floatingWindows.count, 0)
     }
 }

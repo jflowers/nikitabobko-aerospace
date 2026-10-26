@@ -119,6 +119,11 @@ final class WindowSwitcherController {
         endSession()
         _ = windowToFocus?.focusWindow()
         windowToFocus?.nativeFocus() // syncFocusToMacOs
+        // Schedule the complete refresh that AX notifications would otherwise trigger, so that
+        // `layoutWorkspaces` runs immediately (this commit happens outside `runLightSession`)
+        if !isUnitTest {
+            scheduleCancellableCompleteRefreshSession(.ax("WindowSwitcherController.commit"))
+        }
     }
 
     func cancel() {

@@ -171,6 +171,16 @@ final class MacApp: AbstractApp {
         }
     }
 
+    /// Synchronous version of `setAxFrame`. Returns only after the frame change is committed
+    func setAxFrameSync(_ windowId: UInt32, _ topLeft: CGPoint?, _ size: CGSize?) async {
+        setFrameJobs.removeValue(forKey: windowId)?.cancel()
+        _ = try? await withWindow(windowId, .nonCancellable) { [axApp] window, job in
+            try disableAnimations(app: axApp.threadGuarded, job) {
+                try setFrame(window, topLeft, size, job)
+            }
+        }
+    }
+
     func getAxWindowsCount(_ cm: CancellationMode) async throws -> Int? {
         try await thread?.runInLoop(cm) { [axApp] job in
             axApp.threadGuarded.get(Ax.windowsAttr)?.count

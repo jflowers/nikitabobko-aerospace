@@ -179,6 +179,10 @@ public enum FormatVar: RawRepresentable, Equatable, CaseIterable, Sendable {
     }
 
     public enum WindowFormatVar: String, Equatable, CaseIterable, Sendable {
+        case frameH = "frame-h"
+        case frameW = "frame-w"
+        case frameX = "frame-x"
+        case frameY = "frame-y"
         case windowId = "window-id"
         case windowIsFullscreen = "window-is-fullscreen"
         case windowIsSticky = "window-is-sticky"
@@ -207,6 +211,22 @@ public enum FormatVar: RawRepresentable, Equatable, CaseIterable, Sendable {
         case monitorAppKitNsScreenScreensId = "monitor-appkit-nsscreen-screens-id"
         case monitorName = "monitor-name"
         case monitorIsMain = "monitor-is-main"
+    }
+}
+
+extension FormatVar.WindowFormatVar {
+    public var isFrameVar: Bool {
+        switch self {
+            case .frameH, .frameW, .frameX, .frameY: true
+            case .windowId, .windowIsFullscreen, .windowIsSticky, .windowTitle, .windowLayout, .windowParentContainerLayout: false
+        }
+    }
+}
+
+extension FormatVar {
+    public var isWindowFrameVar: Bool {
+        guard case .window(let windowVar) = self else { return false }
+        return windowVar.isFrameVar
     }
 }
 

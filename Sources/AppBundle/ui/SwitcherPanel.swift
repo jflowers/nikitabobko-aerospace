@@ -40,19 +40,6 @@ final class SwitcherPanel: NSPanelHud {
             CGFloat(max(itemsCount - 1, 0)) * SwitcherView.itemSpacing
         return NSSize(width: width, height: SwitcherView.panelHeight)
     }
-
-    private static func centered(_ size: NSSize, on monitor: MonitorInfo) -> NSRect {
-        let screenFrame =
-            NSScreen.screens.getOrNil(atIndex: monitor.monitorAppKitNsScreenScreensId - 1)?.frame
-                ?? NSScreen.main?.frame
-                ?? .zero
-        return NSRect(
-            x: screenFrame.midX - size.width / 2,
-            y: screenFrame.midY - size.height / 2,
-            width: size.width,
-            height: size.height,
-        )
-    }
 }
 
 struct SwitcherView: View {

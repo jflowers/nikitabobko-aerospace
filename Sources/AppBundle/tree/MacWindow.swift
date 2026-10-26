@@ -215,6 +215,10 @@ final class MacWindow: Window {
         macApp.setAxFrame(windowId, topLeft, size)
     }
 
+    override func setAxFrameSync(_ topLeft: CGPoint?, _ size: CGSize?) async {
+        await macApp.setAxFrameSync(windowId, topLeft, size)
+    }
+
     override func getAxRect(_ cm: CancellationMode) async throws -> Rect? {
         try await macApp.getAxRect(windowId, cm)
     }

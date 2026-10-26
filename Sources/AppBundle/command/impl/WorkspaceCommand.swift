@@ -12,11 +12,15 @@ struct WorkspaceCommand: Command {
         let workspaceName: String
         switch args.target.val {
             case .relative(let nextPrev):
+                let stdin = args.useStdin ? io.readStdin() : nil
+                if args.gui, let code = tryGuiCycle(focusedWs: focusedWs, isNext: nextPrev == .next, wrapAround: args.wrapAround, stdin: stdin) {
+                    return code
+                }
                 let workspace = getNextPrevWorkspace(
                     current: focusedWs,
                     isNext: nextPrev == .next,
                     wrapAround: args.wrapAround,
-                    stdin: args.useStdin ? io.readStdin() : nil,
+                    stdin: stdin,
                     target: target,
                 )
                 guard let workspace = workspace.getOrNil(appendErrorTo: &io.stderr) else { return .fail }
@@ -37,23 +41,24 @@ struct WorkspaceCommand: Command {
             return .from(bool: Workspace.get(byName: workspaceName).focusWorkspace())
         }
     }
+
+    /// Returns `nil` to fall back to the immediate non-GUI behavior; possible errors are reported by the fallback
+    @MainActor private func tryGuiCycle(focusedWs: Workspace, isNext: Bool, wrapAround: Bool, stdin: String?) -> BinaryExitCode? {
+        guard let workspaces = getNextPrevWorkspacesList(current: focusedWs, stdin: stdin).getOrNil(onFailure: { _ in }) else { return nil }
+        let currentIndex = workspaces.firstIndex { $0 == focusedWs } ?? 0
+        return WorkspacePickerController.shared.cycle(
+            workspaces: workspaces,
+            currentIndex: currentIndex,
+            isNext: isNext,
+            wrapAround: wrapAround,
+            monitor: focusedWs.workspaceMonitor,
+        )
+    }
 }
 
 @MainActor func getNextPrevWorkspace(current: Workspace, isNext: Bool, wrapAround: Bool, stdin: String?, target: LiveFocus) -> ResOrStr<Workspace> {
     Result { () throws(String) in
-        let stdinWorkspaces: [WorkspaceName] = try stdin?.split(whereSeparator: \.isWhitespace)
-            .map { String($0).trim() }
-            .filter { !$0.isEmpty }
-            .mapAllOrFailure(WorkspaceName.parse)
-            .get()
-            ?? []
-        let currentMonitor = current.workspaceMonitor
-        let workspaces: [Workspace] = stdin != nil
-            ? stdinWorkspaces.map { Workspace.get(byName: $0.raw) }
-            : Workspace.all.filter { $0.workspaceMonitor.rect.topLeftCorner == currentMonitor.rect.topLeftCorner }
-                .toSet()
-                .union([current])
-                .sorted()
+        let workspaces = try getNextPrevWorkspacesList(current: current, stdin: stdin).get()
         if workspaces.isEmpty { throw "The list of workspaces is empty" }
         let index = workspaces.firstIndex(where: { $0 == target.workspace })
             .map { index in isNext ? index + 1 : index - 1 }
@@ -67,5 +72,23 @@ struct WorkspaceCommand: Command {
                         : "Rached the beginning of the supplied workspaces list",
                 )
                 .get()
+    }
+}
+
+@MainActor func getNextPrevWorkspacesList(current: Workspace, stdin: String?) -> ResOrStr<[Workspace]> {
+    Result { () throws(String) in
+        let stdinWorkspaces: [WorkspaceName] = try stdin?.split(whereSeparator: \.isWhitespace)
+            .map { String($0).trim() }
+            .filter { !$0.isEmpty }
+            .mapAllOrFailure(WorkspaceName.parse)
+            .get()
+            ?? []
+        let currentMonitor = current.workspaceMonitor
+        return stdin != nil
+            ? stdinWorkspaces.map { Workspace.get(byName: $0.raw) }
+            : Workspace.all.filter { $0.workspaceMonitor.rect.topLeftCorner == currentMonitor.rect.topLeftCorner }
+                .toSet()
+                .union([current])
+                .sorted()
     }
 }

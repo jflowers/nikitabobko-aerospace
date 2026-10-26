@@ -41,5 +41,11 @@ final class TestWindow: Window, CustomStringConvertible {
         _rect.map { CGSize(width: $0.width, height: $0.height) }
     }
 
+    override func setAxFrame(_ topLeft: CGPoint?, _ size: CGSize?) {
+        let newSize = size ?? _rect.map { CGSize(width: $0.width, height: $0.height) } ?? CGSize(width: 0, height: 0)
+        let newTopLeft = topLeft ?? _rect.map { CGPoint(x: $0.topLeftX, y: $0.topLeftY) } ?? CGPoint(x: 0, y: 0)
+        _rect = Rect(topLeftX: newTopLeft.x, topLeftY: newTopLeft.y, width: newSize.width, height: newSize.height)
+    }
+
     override func isMacosFullscreen(_ cm: CancellationMode) async throws -> Bool { isMacosFullscreenForTest }
 }

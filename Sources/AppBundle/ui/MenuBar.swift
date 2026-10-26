@@ -45,7 +45,7 @@ public func menuBar(viewModel: TrayMenuModel) -> some Scene { // todo should it 
                             Task.startUnstructured {
                                 try await runLightSession(.menuBarButton, token) {
                                     var args = MoveNodeToWorkspaceCmdArgs(rawArgs: [])
-                                    args.target = .initialized(.direct(WorkspaceName.parse(workspace.name).getOrDie()))
+                                    args.target = .direct(WorkspaceName.parse(workspace.name).getOrDie())
                                     _ = await MoveNodeToWorkspaceCommand(args: args).run(.defaultEnv, .emptyStdin)
                                 }
                             }

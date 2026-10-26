@@ -155,6 +155,32 @@ final class FormatTest: XCTestCase {
         assertPrimitive(FormatVar.window(.windowTitle).expandFormatVar(obj: obj), .string("title-x"))
     }
 
+    func testExpandWindowFrame() {
+        let workspace = Workspace.get(byName: name)
+        let window = TestWindow.new(id: 1, parent: workspace.floatingWindowsContainer)
+        let obj = AeroObj.window(.forTest(window: window, title: nil, frame: Rect(topLeftX: 10.2, topLeftY: 20, width: 300.7, height: 200)))
+        assertPrimitive(FormatVar.window(.frameX).expandFormatVar(obj: obj), .int(10))
+        assertPrimitive(FormatVar.window(.frameY).expandFormatVar(obj: obj), .int(20))
+        assertPrimitive(FormatVar.window(.frameW).expandFormatVar(obj: obj), .int(301))
+        assertPrimitive(FormatVar.window(.frameH).expandFormatVar(obj: obj), .int(200))
+    }
+
+    func testExpandWindowFrameNull() {
+        let workspace = Workspace.get(byName: name)
+        let window = TestWindow.new(id: 1, parent: workspace.floatingWindowsContainer)
+        let obj = AeroObj.window(.forTest(window: window, title: nil))
+        assertPrimitive(FormatVar.window(.frameX).expandFormatVar(obj: obj), .string("NULL-FRAME"))
+    }
+
+    func testResolveWindowPrefetchesFrame() async throws {
+        let workspace = Workspace.get(byName: name)
+        let window = TestWindow.new(id: 1, parent: workspace.floatingWindowsContainer, rect: Rect(topLeftX: 5, topLeftY: 6, width: 100, height: 50))
+        let withFrame = try await WindowWithPrefetchedTitle.resolveWindow(window, for: .window(.frameX), .nonCancellable)
+        assertPrimitive(FormatVar.window(.frameX).expandFormatVar(obj: .window(withFrame)), .int(5))
+        let withoutFrame = try await WindowWithPrefetchedTitle.resolveWindow(window, for: .window(.windowId), .nonCancellable)
+        assertPrimitive(FormatVar.window(.frameX).expandFormatVar(obj: .window(withoutFrame)), .string("NULL-FRAME"))
+    }
+
     func testExpandWindowLayoutTiling() {
         let root = Workspace.get(byName: name).rootTilingContainer
         let window = TestWindow.new(id: 1, parent: root)

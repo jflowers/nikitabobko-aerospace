@@ -14,6 +14,8 @@ aerospace move-node-to-workspace [-h|--help] [--focus-follows-window] [--wrap-ar
                                  (next|prev)
 aerospace move-node-to-workspace [-h|--help] [--focus-follows-window] [--fail-if-noop]
                                  [--window-id <window-id>] [--] <workspace-name>
+aerospace move-node-to-workspace [-h|--help] [--fail-if-noop] [--window-id <window-id>]
+                                 [--focus-follows-window] --gui
 
 // end::synopsis[]
 
@@ -46,6 +48,16 @@ Incompatible with `--no-stdin`
 --no-stdin::
 Ignore the list of workspaces from stdin, even if provided.
 Incompatible with `--stdin`
+
+--gui::
+Show a vertical overlay to pick the workspace to move the window to. +
+Incompatible with `(next|prev)` and `<workspace-name>`. +
+The overlay opens with the selection on the workspace of the window in question. +
+`up` and `down` move the selection (wrapped around). +
+The window is moved only when the modifier that is held during the first invocation (excluding `Shift`) is released, or when `Enter` is pressed, or when a workspace row is clicked. +
+`Escape` cancels the picking and keeps the window on its current workspace. +
+If no modifier is held during the first invocation (e.g. when the command is triggered from CLI), the overlay still opens, but only `Enter` and click can commit it. +
+If the event tap can't be created, the command fails.
 
 // =========================================================== Arguments
 include::./util/conditional-arguments-header.adoc[]

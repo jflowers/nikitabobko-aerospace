@@ -8,6 +8,7 @@ public struct WorkspaceCmdArgs: CmdArgs {
             "--auto-back-and-forth": ArgParser(\._autoBackAndForth, constSubArgParserFun(true)),
             "--wrap-around": ArgParser(\._wrapAround, constSubArgParserFun(true)),
             "--fail-if-noop": trueBoolFlag(\.failIfNoop),
+            "--gui": trueBoolFlag(\.gui),
 
             "--stdin": ArgParser(\.commonState.explicitStdinFlag, constSubArgParserFun(true)),
             "--no-stdin": ArgParser(\.commonState.explicitStdinFlag, constSubArgParserFun(false)),
@@ -25,6 +26,7 @@ public struct WorkspaceCmdArgs: CmdArgs {
     public var _autoBackAndForth: Bool?
     public var failIfNoop: Bool = false
     public var _wrapAround: Bool?
+    public var gui: Bool = false
 }
 
 func parseWorkspaceCmdArgs(_ args: StrArrSlice) -> ParsedCmd<WorkspaceCmdArgs> {
@@ -34,6 +36,7 @@ func parseWorkspaceCmdArgs(_ args: StrArrSlice) -> ParsedCmd<WorkspaceCmdArgs> {
         .filterNot("--fail-if-noop is incompatible with \(NextPrev.unionLiteral)") { $0.failIfNoop && $0.target.val.isRelatve }
         .filterNot("--fail-if-noop is incompatible with --auto-back-and-forth") { $0.autoBackAndForth && $0.failIfNoop }
         .filter("--stdin and --no-stdin require using \(NextPrev.unionLiteral) argument") { ($0.commonState.explicitStdinFlag != nil).implies($0.target.val.isRelatve) }
+        .filter("--gui requires using \(NextPrev.unionLiteral) argument") { $0.gui.implies($0.target.val.isRelatve) }
 }
 
 extension WorkspaceCmdArgs {

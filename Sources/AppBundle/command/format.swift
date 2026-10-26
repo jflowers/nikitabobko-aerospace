@@ -4,28 +4,35 @@ import Foundation
 struct WindowWithPrefetchedTitle {
     let window: Window
     let title: String?
+    let frame: Rect?
 
-    private init(window: Window, title: String?) {
+    private init(window: Window, title: String?, frame: Rect?) {
         self.window = window
         self.title = title
+        self.frame = frame
     }
 
     static func resolveWindow(_ window: Window, for formatVar: FormatVar, _ cm: CancellationMode) async throws -> Self {
-        try await resolveWindow(window, needsTitle: formatVar == .window(.windowTitle), cm)
+        try await resolveWindow(window, needsTitle: formatVar == .window(.windowTitle), needsFrame: formatVar.isWindowFrameVar, cm)
     }
 
     static func resolveWindow(_ window: Window, for format: [InterToken<InterVar>], _ cm: CancellationMode) async throws -> Self {
         let needsTitle = format.contains { $0 == .interVar(.formatVar(.window(.windowTitle))) }
-        return try await resolveWindow(window, needsTitle: needsTitle, cm)
+        let needsFrame = format.contains { token in
+            guard case .interVar(.formatVar(.window(let windowVar))) = token else { return false }
+            return windowVar.isFrameVar
+        }
+        return try await resolveWindow(window, needsTitle: needsTitle, needsFrame: needsFrame, cm)
     }
 
-    private static func resolveWindow(_ window: Window, needsTitle: Bool, _ cm: CancellationMode) async throws -> Self {
+    private static func resolveWindow(_ window: Window, needsTitle: Bool, needsFrame: Bool, _ cm: CancellationMode) async throws -> Self {
         let title = needsTitle ? try await window.getTitle(cm) : nil
-        return .init(window: window, title: title)
+        let frame = needsFrame ? try await window.getAxRect(cm) : nil
+        return .init(window: window, title: title, frame: frame)
     }
 
-    static func forTest(window: Window, title: String?) -> Self {
-        .init(window: window, title: title)
+    static func forTest(window: Window, title: String?, frame: Rect? = nil) -> Self {
+        .init(window: window, title: title, frame: frame)
     }
 }
 
@@ -161,6 +168,10 @@ extension FormatVar {
                     case .windowIsSticky: .success(.bool(w.window.isSticky))
                     case .windowTitle: .success(.string(w.title.orDie("Title wasn't prefetched")))
                     case .windowLayout, .windowParentContainerLayout: toLayoutResult(w: w.window)
+                    case .frameH: .success(toFramePrimitive(w.frame) { $0.height })
+                    case .frameW: .success(toFramePrimitive(w.frame) { $0.width })
+                    case .frameX: .success(toFramePrimitive(w.frame) { $0.topLeftX })
+                    case .frameY: .success(toFramePrimitive(w.frame) { $0.topLeftY })
                 }
             case (.workspace(let w), .workspace(let f)):
                 return switch f {
@@ -242,6 +253,11 @@ private func toLayoutString(tc: TilingContainer) -> String {
         case (.accordion, .h): return LayoutCmdArgs.LayoutDescription.h_accordion.rawValue
         case (.accordion, .v): return LayoutCmdArgs.LayoutDescription.v_accordion.rawValue
     }
+}
+
+private func toFramePrimitive(_ frame: Rect?, _ extract: @Sendable (Rect) -> CGFloat) -> Primitive {
+    guard let frame else { return .string("NULL-FRAME") }
+    return .int(Int64(extract(frame).rounded()))
 }
 
 private func toLayoutResult(w: Window) -> Result<Primitive, InterVarExpansionError> {

@@ -35,6 +35,9 @@ import Foundation
             layoutWorkspaces: false,
         )
         try await runLightSession(.startup, .forceRun) {
+            // Run `on-window-detected` callbacks for the windows restored by window-recovery.
+            // It must happen inside the startup session to preserve `during-aero-space-startup` matcher semantics
+            await runDeferredOnWindowDetected()
             smartLayoutAtStartup()
             _ = await config.afterStartupCommand.run(.defaultEnv, .emptyStdin)
         }

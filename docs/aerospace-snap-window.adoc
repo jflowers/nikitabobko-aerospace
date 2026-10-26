@@ -1,0 +1,43 @@
+= aerospace-snap-window(1)
+include::util/man-attributes.adoc[]
+:manname: aerospace-snap-window
+// tag::purpose[]
+:manpurpose: Snap a floating window to a half of the screen or to the center
+// end::purpose[]
+
+// =========================================================== Synopsis
+== Synopsis
+[verse]
+// tag::synopsis[]
+aerospace snap-window [-h|--help] [--window-id <window-id>] (left-half|right-half|top-half|bottom-half|center)
+
+// end::synopsis[]
+
+// =========================================================== Description
+== Description
+
+// tag::body[]
+{manpurpose}
+
+The command works only on floating windows. To float a window use `aerospace layout floating`.
+
+The region is computed from the visible frame (the frame that excludes the menu bar, the dock and the notch)
+of the monitor that the window currently occupies.
+
+Halves are full-extent. E.g. `left-half` covers the left half of the monitor's visible frame from the very
+top to the very bottom.
+
+`center` keeps the current window size and centers the window.
+
+// =========================================================== Options
+include::./util/conditional-options-header.adoc[]
+
+-h, --help:: Print help
+
+--window-id <window-id>::
+include::./util/window-id-flag-desc.adoc[]
+
+// end::body[]
+
+// =========================================================== Footer
+include::util/man-footer.adoc[]
